@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import type { Agent } from "@/types/database";
 
 export const metadata = {
   title: "My Agents | AI Trading Arena",
@@ -23,7 +24,7 @@ export default async function AgentsPage() {
     .from("agents")
     .select("*")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }) as { data: Agent[] | null };
 
   return (
     <div>
