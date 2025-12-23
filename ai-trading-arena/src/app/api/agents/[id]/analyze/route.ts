@@ -8,7 +8,7 @@ import {
   parseTradeDecision,
 } from "@/lib/claude/prompts";
 import { getMarketNews, getMockNews, getMockQuote, getQuote } from "@/lib/finnhub/client";
-import type { Agent, Trade, RiskParams, TradeInsert, User } from "@/types/database";
+import type { Agent, Trade, RiskParams, TradeInsert, User, PortfolioSnapshotInsert } from "@/types/database";
 import type { PostgrestError } from "@supabase/supabase-js";
 
 interface RouteContext {
@@ -244,18 +244,48 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    // Update agent stats
+    // Update agent stats and portfolio value
     const newTotalTrades = agent.total_trades + 1;
     const newApiCost = agent.total_api_cost + claudeResponse.cost;
+
+    // Simulate portfolio value change based on trade
+    // In a real system, this would track actual positions
+    let newPortfolioValue = agent.current_value;
+    if (decision.action === "BUY" && totalValue) {
+      // Simulate a small gain/loss based on confidence
+      const change = totalValue * (Math.random() * 0.02 - 0.005) * decision.confidence;
+      newPortfolioValue = agent.current_value + change;
+    } else if (decision.action === "SELL" && totalValue) {
+      const change = totalValue * (Math.random() * 0.03 - 0.01) * decision.confidence;
+      newPortfolioValue = agent.current_value + change;
+    }
+
+    const newReturnPct = ((newPortfolioValue - agent.starting_capital) / agent.starting_capital) * 100;
 
     await supabase
       .from("agents")
       .update({
         total_trades: newTotalTrades,
         total_api_cost: newApiCost,
+        current_value: newPortfolioValue,
+        total_return_pct: newReturnPct,
         last_analysis_at: new Date().toISOString(),
       } as never)
       .eq("id", agentId);
+
+    // Create portfolio snapshot for tracking history
+    const snapshotData: PortfolioSnapshotInsert = {
+      agent_id: agentId,
+      total_value: newPortfolioValue,
+      cash: newPortfolioValue, // Simplified: all cash for now
+      positions: [],
+      daily_return_pct: ((newPortfolioValue - agent.current_value) / agent.current_value) * 100,
+      cumulative_return_pct: newReturnPct,
+    };
+
+    await supabase
+      .from("portfolio_snapshots")
+      .insert(snapshotData as never);
 
     // Deduct credit
     await supabase
@@ -279,6 +309,12 @@ export async function POST(request: Request, { params }: RouteContext) {
           news_summary: decision.news_summary,
           risk_assessment: decision.risk_assessment,
           current_price: quote.currentPrice,
+        },
+        portfolio: {
+          previous_value: agent.current_value,
+          new_value: newPortfolioValue,
+          change: newPortfolioValue - agent.current_value,
+          total_return_pct: newReturnPct,
         },
         cost: {
           api_cost: claudeResponse.cost,

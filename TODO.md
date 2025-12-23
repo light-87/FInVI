@@ -1,8 +1,8 @@
 # TODO - AI Trading Arena
 
-**Current Sprint:** Week 1  
-**Days Remaining:** 14  
-**Last Updated:** [DATE]
+**Current Sprint:** Week 1
+**Days Remaining:** 6
+**Last Updated:** 2024-12-23
 
 ---
 
@@ -55,56 +55,60 @@
 - [ ] Test complete auth flow end-to-end
 - [ ] Redirect to dashboard after login
 
-#### Day 4: Agent Creation
-- [ ] Design agent creation form (mockup first)
-- [ ] Build AgentCreator component
-- [ ] Form fields: name, LLM model, system prompt, news sources, risk params
-- [ ] Add form validation
-- [ ] Create POST `/api/agents` endpoint
-- [ ] Save agent to Supabase
-- [ ] Create agents list view
-- [ ] Create agent detail page (`/agents/[id]`)
-- [ ] Test CRUD operations
+#### Day 4: Agent Creation ✅
+- [x] Design agent creation form (mockup first)
+- [x] Build AgentCreator component
+- [x] Form fields: name, LLM model, system prompt, news sources, risk params
+- [x] Add form validation
+- [x] Create POST `/api/agents` endpoint
+- [x] Save agent to Supabase
+- [x] Create agents list view
+- [x] Create agent detail page (`/agents/[id]`)
+- [x] Test CRUD operations
 
-#### Day 5: Claude API Integration
-- [ ] Create Claude API client wrapper (`lib/claude/client.ts`)
-- [ ] Design prompt template (`lib/claude/prompts.ts`)
-- [ ] Create POST `/api/agents/[id]/analyze` endpoint
-- [ ] Test with hardcoded news first
-- [ ] Parse Claude response to structured format
-- [ ] Handle errors gracefully
-- [ ] Add response logging for debugging
+#### Day 5: Claude API Integration ✅
+- [x] Create Claude API client wrapper (`lib/claude/client.ts`)
+- [x] Design prompt template (`lib/claude/prompts.ts`)
+- [x] Create POST `/api/agents/[id]/analyze` endpoint
+- [x] Test with hardcoded news first
+- [x] Parse Claude response to structured format
+- [x] Handle errors gracefully
+- [x] Add response logging for debugging
 
-#### Day 6: Finnhub Integration
-- [ ] Create Finnhub client wrapper (`lib/finnhub/client.ts`)
-- [ ] Fetch general market news
-- [ ] Filter by category based on agent config
-- [ ] Cache news responses (avoid rate limits)
-- [ ] Integrate with analyze endpoint
-- [ ] Test full flow: news → Claude → response
-- [ ] Verify rate limiting is respected
+#### Day 6: Finnhub Integration ✅
+- [x] Create Finnhub client wrapper (`lib/finnhub/client.ts`)
+- [x] Fetch general market news
+- [x] Filter by category based on agent config
+- [x] Cache news responses (avoid rate limits)
+- [x] Integrate with analyze endpoint
+- [x] Test full flow: news → Claude → response
+- [x] Verify rate limiting is respected
 
-#### Day 7: Trade Execution & Storage
-- [ ] Parse Claude response to trade action
-- [ ] Validate trade action (ticker exists, action valid)
-- [ ] Store trade in database
-- [ ] Update portfolio snapshot
-- [ ] Deduct credit from user
-- [ ] Return result to frontend
-- [ ] Display trade result to user
-- [ ] Show reasoning clearly
+#### Day 7-8: Trade Execution & Dashboard ✅
+- [x] Parse Claude response to trade action
+- [x] Validate trade action (ticker exists, action valid)
+- [x] Store trade in database
+- [x] Update portfolio snapshot after trades
+- [x] Deduct credit from user
+- [x] Return result to frontend
+- [x] Display trade result to user
+- [x] Show reasoning clearly
+- [x] Create dashboard overview page (`/dashboard`)
+- [x] Performance chart component
+- [x] Trade detail modal with reasoning viewer
+- [x] Portfolio history API endpoint
 
 ---
 
 ### P1 - Should Have (Impressive)
 
-#### Dashboard
-- [ ] Agent performance chart (line chart)
-- [ ] Trades history list
-- [ ] Reasoning log viewer component
-- [ ] Cost breakdown widget
-- [ ] Credit balance display
-- [ ] Stats summary cards
+#### Dashboard ✅
+- [x] Agent performance chart (line chart)
+- [x] Trades history list
+- [x] Reasoning log viewer component
+- [x] Cost breakdown widget
+- [x] Credit balance display
+- [x] Stats summary cards
 
 #### Leaderboard
 - [ ] Leaderboard calculation (SQL function or query)
@@ -189,10 +193,10 @@ These are good ideas but NOT for the 2-week demo:
 
 | Blocker | Depends On | Status |
 |---------|------------|--------|
-| Claude API calls | API key active | ✅ Have access |
-| Finnhub API calls | API key | ⏳ Need to get |
-| Supabase connection | Project created | ⏳ Need to create |
-| Vercel deploy | GitHub repo | ⏳ Need to create |
+| Claude API calls | API key active | ✅ Working |
+| Finnhub API calls | API key | ✅ Working |
+| Supabase connection | Project created | ✅ Working |
+| Vercel deploy | GitHub repo | ⏳ Need to deploy |
 
 ---
 

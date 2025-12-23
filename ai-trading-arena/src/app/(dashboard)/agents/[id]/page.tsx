@@ -4,6 +4,8 @@ import type { Agent, Trade, RiskParams } from "@/types/database";
 import Link from "next/link";
 import { AgentActions } from "./agent-actions";
 import { RunAnalysis } from "./run-analysis";
+import { PerformanceChart } from "@/components/performance-chart";
+import { TradeDetailModal } from "./trade-detail-modal";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -166,6 +168,14 @@ export default async function AgentDetailPage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* Performance Chart */}
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">
+          Portfolio Performance
+        </h2>
+        <PerformanceChart agentId={agent.id} height={250} />
+      </div>
+
       {/* Recent Trades */}
       <div className="bg-surface border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
@@ -189,6 +199,7 @@ export default async function AgentDetailPage({ params }: PageProps) {
                   <th className="pb-3 font-medium">Ticker</th>
                   <th className="pb-3 font-medium text-right">Confidence</th>
                   <th className="pb-3 font-medium text-right">P/L</th>
+                  <th className="pb-3 font-medium text-right">Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -230,6 +241,9 @@ export default async function AgentDetailPage({ params }: PageProps) {
                         : `${(trade.profit_loss ?? 0) >= 0 ? "+" : ""}$${(
                             trade.profit_loss ?? 0
                           ).toFixed(2)}`}
+                    </td>
+                    <td className="py-3 text-right">
+                      <TradeDetailModal trade={trade} />
                     </td>
                   </tr>
                 ))}
