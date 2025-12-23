@@ -10,7 +10,7 @@
 
 | Week | Days Completed | Status |
 |------|----------------|--------|
-| Week 1 | 1/7 | In Progress |
+| Week 1 | 2/7 | In Progress |
 | Week 2 | 0/7 | Not Started |
 
 ---
@@ -45,25 +45,33 @@
 
 ---
 
-### Day 2 - [DATE]
+### Day 2 - December 23, 2024
 
 **Focus:** Supabase Setup
 
 #### Completed
-- [ ] Created Supabase project
-- [ ] Wrote and ran schema SQL
-- [ ] Configured RLS policies
-- [ ] Setup Supabase clients
-- [ ] Tested connection from Next.js
+- [x] Created Supabase project (user setup API keys)
+- [x] Wrote 01_schema.sql with all tables (users, agents, trades, portfolio_snapshots, leaderboard)
+- [x] Wrote 02_policies.sql with RLS policies for all tables
+- [x] Wrote 03_functions.sql with helper functions (credit management, leaderboard refresh, etc.)
+- [x] Wrote 04_seed.sql template for demo data
+- [x] Created Supabase server client (with service key for admin ops)
+- [x] Created Supabase browser client (with anon key for client components)
+- [x] Created TypeScript types for all database tables
+- [x] Created auth middleware for protected routes
+- [x] Created /api/health endpoint to test database connection
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Using @supabase/ssr for Next.js 15+ App Router compatibility
+- Admin client bypasses RLS for API operations
+- Middleware handles session refresh and route protection
+- TypeScript types manually created (can regenerate with supabase gen types later)
 
 #### Tomorrow
-- Authentication
+- Authentication (login/signup pages)
 
 ---
 
