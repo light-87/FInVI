@@ -1,7 +1,7 @@
 # Progress Log - AI Trading Arena
 
-**Project Start Date:** [INSERT DATE]  
-**Target Completion:** 2 weeks from start  
+**Project Start Date:** December 23, 2024
+**Target Completion:** 2 weeks from start
 **Goal:** Functional demo for Founder Factory application
 
 ---
@@ -10,32 +10,35 @@
 
 | Week | Days Completed | Status |
 |------|----------------|--------|
-| Week 1 | 0/7 | Not Started |
+| Week 1 | 1/7 | In Progress |
 | Week 2 | 0/7 | Not Started |
 
 ---
 
 ## Week 1
 
-### Day 1 - [DATE]
+### Day 1 - December 23, 2024
 
 **Focus:** Project Setup
 
 #### Completed
-- [ ] Initialized Bun + Next.js 15 project
-- [ ] Configured TypeScript strict mode
-- [ ] Setup Tailwind with custom dark theme
-- [ ] Added custom fonts
-- [ ] Created folder structure
-- [ ] Initialized tracking files
-- [ ] Setup environment variables
-- [ ] Deployed empty shell to Vercel
+- [x] Initialized Bun + Next.js 16 project (latest versions)
+- [x] Configured TypeScript strict mode
+- [x] Setup Tailwind v4 with custom dark theme (from DESIGN_SYSTEM.md)
+- [x] Added custom fonts (JetBrains Mono + Outfit via Google Fonts)
+- [x] Created full folder structure per implementation plan
+- [x] Setup environment variables (.env.local + .env.example)
+- [x] Created test landing page with theme demonstration
+- [ ] Deployed empty shell to Vercel (user doing this now)
 
 #### Blockers
-- None yet
+- Bun registry was blocked in dev environment, used npm fallback then user ran bun locally
 
 #### Notes
-- [Add observations, learnings, ideas]
+- Using Next.js 16.1.1 (latest) instead of 15
+- Using Tailwind v4 (new CSS-first configuration approach)
+- React 19 is now stable and included
+- Fonts loaded via next/font/google for optimal performance
 
 #### Tomorrow
 - Supabase setup
