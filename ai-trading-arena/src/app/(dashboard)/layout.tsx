@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "@/components/layout/DashboardNav";
+import type { User } from "@/types/database";
 
 export default async function DashboardLayout({
   children,
@@ -22,7 +23,7 @@ export default async function DashboardLayout({
     .from("users")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .single() as { data: User | null };
 
   return (
     <div className="min-h-screen bg-background">

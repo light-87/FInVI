@@ -86,6 +86,17 @@ const { data: agents } = await supabase
 
 **Prevention:** Always type Supabase query results explicitly, or ensure the Database type is properly connected to the client.
 
+**Note:** This applies to ALL Supabase queries. Common pattern:
+```typescript
+import type { User, Agent, Trade } from "@/types/database";
+
+// For arrays:
+const { data } = await supabase.from("agents").select("*") as { data: Agent[] | null };
+
+// For single records:
+const { data } = await supabase.from("users").select("*").single() as { data: User | null };
+```
+
 ---
 
 ## Next.js Warnings
