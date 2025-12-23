@@ -13,11 +13,16 @@ export default async function AgentsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // User is guaranteed by layout, but TypeScript needs this check
+  if (!user) {
+    return null;
+  }
+
   // Fetch user's agents
   const { data: agents } = await supabase
     .from("agents")
     .select("*")
-    .eq("user_id", user?.id)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   return (
