@@ -215,14 +215,14 @@ CREATE OR REPLACE FUNCTION public.get_agent_performance(
     days_back INTEGER DEFAULT 30
 )
 RETURNS TABLE (
-    timestamp TIMESTAMPTZ,
+    snapshot_time TIMESTAMPTZ,
     total_value DECIMAL(12, 2),
     daily_return_pct DECIMAL(8, 4)
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        ps.timestamp,
+        ps.timestamp AS snapshot_time,
         ps.total_value,
         ps.daily_return_pct
     FROM public.portfolio_snapshots ps

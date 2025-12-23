@@ -272,7 +272,7 @@ export type Database = {
       get_agent_performance: {
         Args: { agent_uuid: string; days_back?: number };
         Returns: {
-          timestamp: string;
+          snapshot_time: string;
           total_value: number;
           daily_return_pct: number;
         }[];
