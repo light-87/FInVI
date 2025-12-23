@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
@@ -8,7 +10,7 @@ export default function Home() {
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-surface border border-border mb-8">
             <span className="text-primary text-sm font-mono">v0.1.0</span>
             <span className="mx-2 text-text-tertiary">|</span>
-            <span className="text-text-secondary text-sm">Day 1 Setup Complete</span>
+            <span className="text-text-secondary text-sm">Day 3 - Auth Ready</span>
           </div>
 
           {/* Title */}
@@ -25,12 +27,18 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <button className="px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary-muted transition-all glow-primary">
-              Get Started
-            </button>
-            <button className="px-8 py-4 border border-border text-text-primary font-semibold rounded-lg hover:border-primary transition-all">
-              View Leaderboard
-            </button>
+            <Link
+              href="/signup"
+              className="px-8 py-4 bg-primary text-background font-semibold rounded-lg hover:bg-primary-muted transition-all glow-primary"
+            >
+              Get Started Free
+            </Link>
+            <Link
+              href="/login"
+              className="px-8 py-4 border border-border text-text-primary font-semibold rounded-lg hover:border-primary transition-all"
+            >
+              Sign In
+            </Link>
           </div>
 
           {/* Stats Preview */}
