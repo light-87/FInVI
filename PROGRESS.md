@@ -10,7 +10,7 @@
 
 | Week | Days Completed | Status |
 |------|----------------|--------|
-| Week 1 | 1/7 | In Progress |
+| Week 1 | 3/7 | In Progress |
 | Week 2 | 0/7 | Not Started |
 
 ---
@@ -45,47 +45,61 @@
 
 ---
 
-### Day 2 - [DATE]
+### Day 2 - December 23, 2024
 
 **Focus:** Supabase Setup
 
 #### Completed
-- [ ] Created Supabase project
-- [ ] Wrote and ran schema SQL
-- [ ] Configured RLS policies
-- [ ] Setup Supabase clients
-- [ ] Tested connection from Next.js
+- [x] Created Supabase project (user setup API keys)
+- [x] Wrote 01_schema.sql with all tables (users, agents, trades, portfolio_snapshots, leaderboard)
+- [x] Wrote 02_policies.sql with RLS policies for all tables
+- [x] Wrote 03_functions.sql with helper functions (credit management, leaderboard refresh, etc.)
+- [x] Wrote 04_seed.sql template for demo data
+- [x] Created Supabase server client (with service key for admin ops)
+- [x] Created Supabase browser client (with anon key for client components)
+- [x] Created TypeScript types for all database tables
+- [x] Created auth middleware for protected routes
+- [x] Created /api/health endpoint to test database connection
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Using @supabase/ssr for Next.js 15+ App Router compatibility
+- Admin client bypasses RLS for API operations
+- Middleware handles session refresh and route protection
+- TypeScript types manually created (can regenerate with supabase gen types later)
 
 #### Tomorrow
-- Authentication
+- Authentication (login/signup pages)
 
 ---
 
-### Day 3 - [DATE]
+### Day 3 - December 23, 2024
 
 **Focus:** Authentication
 
 #### Completed
-- [ ] Implemented login page
-- [ ] Implemented signup page
-- [ ] Setup auth middleware
-- [ ] Created protected route wrapper
-- [ ] Tested auth flow end-to-end
+- [x] Created login page with form validation
+- [x] Created signup page with password confirmation
+- [x] Implemented Supabase auth (signIn, signUp, signOut)
+- [x] Created useAuth hook for client components
+- [x] Created DashboardNav component with user info and credits
+- [x] Created dashboard layout with auth protection
+- [x] Created agents page (empty state + agent cards)
+- [x] Updated landing page with auth links
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Using Supabase SSR for Next.js App Router compatibility
+- Auth forms use client components with useState
+- Dashboard layout checks auth server-side and redirects if not logged in
+- Middleware handles session refresh (deprecated warning in Next.js 16, but still works)
 
 #### Tomorrow
-- Agent creation
+- Agent creation form and CRUD operations
 
 ---
 
