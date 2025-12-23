@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Agent, Trade, RiskParams } from "@/types/database";
 import Link from "next/link";
 import { AgentActions } from "./agent-actions";
+import { RunAnalysis } from "./run-analysis";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -243,21 +244,8 @@ export default async function AgentDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Run Analysis CTA */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-6 text-center">
-        <h3 className="text-lg font-semibold text-text-primary mb-2">
-          Ready to analyze?
-        </h3>
-        <p className="text-text-secondary mb-4">
-          Run an analysis to get a trading decision based on current market news
-        </p>
-        <button
-          className="px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:bg-primary-muted transition-colors"
-          disabled
-        >
-          Run Analysis (Coming Day 5)
-        </button>
-      </div>
+      {/* Run Analysis */}
+      <RunAnalysis agentId={agent.id} isActive={agent.status === "active"} />
     </div>
   );
 }

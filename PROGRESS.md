@@ -143,25 +143,51 @@
 
 ---
 
-### Day 5 - [DATE]
+### Day 5 - December 23, 2024
 
-**Focus:** Claude API Integration
+**Focus:** Claude API Integration + Finnhub
 
 #### Completed
-- [ ] Setup Claude client wrapper
-- [ ] Designed prompt template
-- [ ] Built `/api/analyze` endpoint
-- [ ] Tested with hardcoded news
-- [ ] Handled response parsing
+- [x] Created Claude client wrapper (`src/lib/claude/client.ts`)
+  - Uses fetch directly (no SDK dependency)
+  - Supports claude-sonnet and claude-opus models
+  - Tracks token usage and calculates API costs
+- [x] Designed comprehensive prompt templates (`src/lib/claude/prompts.ts`)
+  - System prompt builder with risk parameters
+  - Portfolio context builder
+  - News context formatter
+  - JSON response parser with validation
+- [x] Built `/api/agents/[id]/analyze` endpoint
+  - Auth + credits check
+  - Daily trade limit enforcement
+  - Fetches news (Finnhub or mock)
+  - Calls Claude API
+  - Parses and validates response
+  - Creates trade record
+  - Updates agent stats
+  - Deducts user credits
+- [x] Created Finnhub client (`src/lib/finnhub/client.ts`)
+  - Market news fetching
+  - Company-specific news
+  - Stock quote fetching
+  - Mock data for testing without API key
+- [x] Added RunAnalysis component for agent detail page
+  - Loading states
+  - Result display with action, ticker, confidence
+  - Reasoning and news summary
+  - Token usage and cost display
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Using fetch directly instead of Anthropic SDK (simpler, no extra dependency)
+- Mock news/quotes available when API keys not set
+- Analysis costs tracked per trade and per agent
+- Credits deducted after each successful analysis
 
 #### Tomorrow
-- Finnhub integration
+- Trade execution and portfolio updates
 
 ---
 
