@@ -64,13 +64,15 @@ export async function getMarketNews(category: string = "general"): Promise<NewsI
 
   try {
     const url = `${FINNHUB_BASE_URL}/news?category=${category}&token=${apiKey}`;
-    const response = await fetch(url, { next: { revalidate: 300 } }); // Cache for 5 min
+    // No caching - get fresh news each time
+    const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error(`Finnhub API error: ${response.status}`);
     }
 
     const data: FinnhubNewsItem[] = await response.json();
+    console.log(`[Finnhub] Fetched ${data.length} news items for category: ${category}`);
 
     return data.map((item) => ({
       id: item.id,
@@ -109,7 +111,7 @@ export async function getCompanyNews(
 
   try {
     const url = `${FINNHUB_BASE_URL}/company-news?symbol=${symbol}&from=${from}&to=${to}&token=${apiKey}`;
-    const response = await fetch(url, { next: { revalidate: 300 } });
+    const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error(`Finnhub API error: ${response.status}`);
@@ -146,7 +148,7 @@ export async function getQuote(symbol: string): Promise<StockQuote | null> {
 
   try {
     const url = `${FINNHUB_BASE_URL}/quote?symbol=${symbol}&token=${apiKey}`;
-    const response = await fetch(url, { next: { revalidate: 60 } }); // Cache for 1 min
+    const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error(`Finnhub API error: ${response.status}`);

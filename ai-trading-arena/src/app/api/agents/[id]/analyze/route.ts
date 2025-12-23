@@ -7,7 +7,7 @@ import {
   buildNewsContext,
   parseTradeDecision,
 } from "@/lib/claude/prompts";
-import { getMarketNews, getMockNews, getMockQuote } from "@/lib/finnhub/client";
+import { getMarketNews, getMockNews, getMockQuote, getQuote } from "@/lib/finnhub/client";
 import type { Agent, Trade, RiskParams, TradeInsert, User } from "@/types/database";
 import type { PostgrestError } from "@supabase/supabase-js";
 
@@ -122,13 +122,19 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Fetch news (use mock if no API key)
     let news;
+    let newsSource = "mock";
     if (process.env.FINNHUB_API_KEY) {
       news = await getMarketNews("general");
-      if (news.length === 0) {
+      if (news.length > 0) {
+        newsSource = "finnhub";
+        console.log(`[Analyze] Using Finnhub news: ${news.length} items`);
+      } else {
         news = getMockNews();
+        console.log("[Analyze] Finnhub returned no news, using mock data");
       }
     } else {
       news = getMockNews();
+      console.log("[Analyze] No FINNHUB_API_KEY, using mock news");
     }
 
     // Build context for Claude
@@ -181,8 +187,19 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    // Get current price for the ticker (mock for now)
-    const quote = getMockQuote(decision.ticker);
+    // Get current price for the ticker (use real quote if Finnhub available)
+    let quote;
+    if (process.env.FINNHUB_API_KEY) {
+      quote = await getQuote(decision.ticker);
+      if (quote) {
+        console.log(`[Analyze] Got real quote for ${decision.ticker}: $${quote.currentPrice}`);
+      } else {
+        console.log(`[Analyze] No quote for ${decision.ticker}, using mock`);
+        quote = getMockQuote(decision.ticker);
+      }
+    } else {
+      quote = getMockQuote(decision.ticker);
+    }
 
     // Calculate trade value (simplified: use 10% of portfolio for buys)
     let quantity: number | null = null;
@@ -269,6 +286,8 @@ export async function POST(request: Request, { params }: RouteContext) {
           output_tokens: claudeResponse.outputTokens,
         },
         credits_remaining: userProfile.credits_remaining - 1,
+        news_source: newsSource,
+        news_count: news.length,
       },
     });
   } catch (err) {
