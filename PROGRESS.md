@@ -103,22 +103,40 @@
 
 ---
 
-### Day 4 - [DATE]
+### Day 4 - December 23, 2024
 
 **Focus:** Agent Creation
 
 #### Completed
-- [ ] Designed agent creation form UI
-- [ ] Built form with validation
-- [ ] Implemented save to database
-- [ ] Created agent list view
-- [ ] Added agent detail view
+- [x] Created agent creation page (`/agents/new`) with full form
+- [x] Built AgentCreatorForm component with validation:
+  - Name (required, max 50 chars)
+  - Description (optional)
+  - LLM model selection (Claude Sonnet/Opus, GPT-4/GPT-4 Turbo)
+  - System prompt with default template
+  - News sources multi-select (Finnhub, SEC, Earnings, Social)
+  - Risk parameters with sliders (stop loss, max position, max trades/day)
+  - Public/private toggle
+- [x] Implemented POST `/api/agents` endpoint with validation
+- [x] Created agent detail page (`/agents/[id]`) showing:
+  - Stats grid (current value, return %, win rate, API cost)
+  - System prompt viewer
+  - Risk parameters display
+  - News sources display
+  - Recent trades table
+- [x] Added edit functionality (`/agents/[id]/edit`)
+- [x] Added delete functionality with confirmation modal
+- [x] Added status toggle (active/paused)
+- [x] Created API routes: GET, POST, PATCH, DELETE for agents
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- All Supabase queries use explicit type casting per ERRORS.md TS-002
+- Using PostgrestError type from @supabase/supabase-js for error handling
+- Forms reuse similar structure between create and edit
+- Delete cascades to trades/snapshots via database FK
 
 #### Tomorrow
 - Claude API integration
