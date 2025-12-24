@@ -3,13 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { analyzeMarket, type ClaudeModel } from "@/lib/claude/client";
 import {
   buildSystemPrompt,
-  buildPortfolioContext,
+  buildRealPortfolioContext,
   buildNewsContext,
   parseTradeDecision,
 } from "@/lib/claude/prompts";
-import { getMarketNews, getMockNews, getMockQuote, getQuote } from "@/lib/finnhub/client";
-import type { Agent, Trade, RiskParams, TradeInsert, User, PortfolioSnapshotInsert } from "@/types/database";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { getMarketNews, getMockNews } from "@/lib/finnhub/client";
+import { getPortfolioSummary, getTickerPrice } from "@/lib/portfolio/helpers";
+import type { Agent, RiskParams, User, TradeSuggestion, AnalysisResponse } from "@/types/database";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -17,6 +17,9 @@ interface RouteContext {
 
 /**
  * POST /api/agents/[id]/analyze - Run trading analysis for an agent
+ *
+ * CHANGED: Now returns a suggestion only, does NOT execute the trade.
+ * Use POST /api/agents/[id]/execute to confirm and execute the trade.
  */
 export async function POST(request: Request, { params }: RouteContext) {
   try {
@@ -112,13 +115,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    // Fetch recent trades for context
-    const { data: recentTrades } = (await supabase
-      .from("trades")
-      .select("action, ticker, timestamp")
-      .eq("agent_id", agentId)
-      .order("created_at", { ascending: false })
-      .limit(5)) as { data: Array<{ action: string; ticker: string; timestamp: string }> | null };
+    // Fetch portfolio with real positions and current prices
+    const portfolio = await getPortfolioSummary(agent);
 
     // Fetch news (use mock if no API key)
     let news;
@@ -139,14 +137,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Build context for Claude
     const systemPrompt = buildSystemPrompt(agent.name, agent.system_prompt, riskParams);
-
-    const portfolioContext = buildPortfolioContext(
-      agent.current_value,
-      agent.current_value, // Simplified: assume all cash for now
-      [], // No positions tracked yet
-      recentTrades || []
-    );
-
+    const portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital);
     const newsContext = buildNewsContext(news);
 
     // Determine which model to use
@@ -187,107 +178,24 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    // Get current price for the ticker (use real quote if Finnhub available)
-    let quote;
-    if (process.env.FINNHUB_API_KEY) {
-      quote = await getQuote(decision.ticker);
-      if (quote) {
-        console.log(`[Analyze] Got real quote for ${decision.ticker}: $${quote.currentPrice}`);
-      } else {
-        console.log(`[Analyze] No quote for ${decision.ticker}, using mock`);
-        quote = getMockQuote(decision.ticker);
-      }
-    } else {
-      quote = getMockQuote(decision.ticker);
-    }
+    // Get current price for the suggested ticker
+    const currentPrice = await getTickerPrice(decision.ticker);
 
-    // Calculate trade value (simplified: use 10% of portfolio for buys)
-    let quantity: number | null = null;
-    let totalValue: number | null = null;
+    // Calculate total cost for the trade
+    const totalCost = decision.quantity * currentPrice;
 
-    if (decision.action === "BUY") {
-      const maxAllocation = agent.current_value * (riskParams.max_position_pct / 100);
-      totalValue = Math.min(maxAllocation, agent.current_value * 0.1);
-      quantity = Math.floor(totalValue / quote.currentPrice);
-      totalValue = quantity * quote.currentPrice;
-    } else if (decision.action === "SELL") {
-      // For demo, simulate selling a position
-      quantity = 10;
-      totalValue = quantity * quote.currentPrice;
-    }
-
-    // Create trade record
-    const tradeData: TradeInsert = {
-      agent_id: agentId,
+    // Build the suggestion response
+    const suggestion: TradeSuggestion = {
       action: decision.action,
       ticker: decision.ticker,
-      quantity,
-      price: quote.currentPrice,
-      total_value: totalValue,
+      quantity: decision.quantity,
+      current_price: currentPrice,
+      total_cost: totalCost,
       reasoning: decision.reasoning,
       confidence: decision.confidence,
-      news_summary: decision.news_summary,
-      api_cost: claudeResponse.cost,
     };
 
-    const { data: trade, error: tradeError } = (await supabase
-      .from("trades")
-      .insert(tradeData as never)
-      .select()
-      .single()) as { data: Trade | null; error: PostgrestError | null };
-
-    if (tradeError) {
-      console.error("Error creating trade:", tradeError);
-      return NextResponse.json(
-        { success: false, error: { code: "DATABASE_ERROR", message: tradeError.message } },
-        { status: 500 }
-      );
-    }
-
-    // Update agent stats and portfolio value
-    const newTotalTrades = agent.total_trades + 1;
-    const newApiCost = agent.total_api_cost + claudeResponse.cost;
-
-    // Simulate portfolio value change based on trade
-    // In a real system, this would track actual positions
-    let newPortfolioValue = agent.current_value;
-    if (decision.action === "BUY" && totalValue) {
-      // Simulate a small gain/loss based on confidence
-      const change = totalValue * (Math.random() * 0.02 - 0.005) * decision.confidence;
-      newPortfolioValue = agent.current_value + change;
-    } else if (decision.action === "SELL" && totalValue) {
-      const change = totalValue * (Math.random() * 0.03 - 0.01) * decision.confidence;
-      newPortfolioValue = agent.current_value + change;
-    }
-
-    const newReturnPct = ((newPortfolioValue - agent.starting_capital) / agent.starting_capital) * 100;
-
-    await supabase
-      .from("agents")
-      .update({
-        total_trades: newTotalTrades,
-        total_api_cost: newApiCost,
-        current_value: newPortfolioValue,
-        total_return_pct: newReturnPct,
-        last_analysis_at: new Date().toISOString(),
-      } as never)
-      .eq("id", agentId);
-
-    // Create portfolio snapshot for tracking history
-    const snapshotData: PortfolioSnapshotInsert = {
-      agent_id: agentId,
-      total_value: newPortfolioValue,
-      cash: newPortfolioValue, // Simplified: all cash for now
-      positions: [],
-      daily_return_pct: ((newPortfolioValue - agent.current_value) / agent.current_value) * 100,
-      cumulative_return_pct: newReturnPct,
-    };
-
-    await supabase
-      .from("portfolio_snapshots")
-      .insert(snapshotData as never);
-
-    // Deduct credit
+    // Deduct credit for the analysis
     await supabase
       .from("users")
       .update({
@@ -296,31 +204,31 @@ export async function POST(request: Request, { params }: RouteContext) {
       } as never)
       .eq("id", authUser.id);
 
-    // Return the result
+    // Update agent's last_analysis_at and API cost
+    await supabase
+      .from("agents")
+      .update({
+        last_analysis_at: new Date().toISOString(),
+        total_api_cost: agent.total_api_cost + claudeResponse.cost,
+      } as never)
+      .eq("id", agentId);
+
+    // Build the response
+    const response: AnalysisResponse = {
+      suggestion,
+      portfolio,
+    };
+
+    // Return the suggestion (trade NOT executed yet)
     return NextResponse.json({
       success: true,
-      data: {
-        trade,
-        analysis: {
-          action: decision.action,
-          ticker: decision.ticker,
-          confidence: decision.confidence,
-          reasoning: decision.reasoning,
-          news_summary: decision.news_summary,
-          risk_assessment: decision.risk_assessment,
-          current_price: quote.currentPrice,
-        },
-        portfolio: {
-          previous_value: agent.current_value,
-          new_value: newPortfolioValue,
-          change: newPortfolioValue - agent.current_value,
-          total_return_pct: newReturnPct,
-        },
-        cost: {
-          api_cost: claudeResponse.cost,
-          input_tokens: claudeResponse.inputTokens,
-          output_tokens: claudeResponse.outputTokens,
-        },
+      data: response,
+      meta: {
+        news_summary: decision.news_summary,
+        risk_assessment: decision.risk_assessment,
+        api_cost: claudeResponse.cost,
+        input_tokens: claudeResponse.inputTokens,
+        output_tokens: claudeResponse.outputTokens,
         credits_remaining: userProfile.credits_remaining - 1,
         news_source: newsSource,
         news_count: news.length,
