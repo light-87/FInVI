@@ -73,8 +73,17 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { name, description, llm_model, system_prompt, news_sources, risk_params, is_public } =
-      body;
+    const {
+      name,
+      description,
+      llm_model,
+      system_prompt,
+      news_sources,
+      risk_params,
+      is_public,
+      auto_execute,
+      auto_interval,
+    } = body;
 
     // Validation
     if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -102,6 +111,10 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate auto_interval if provided
+    const validIntervals = ["3h", "10h", "24h"];
+    const agentAutoInterval = validIntervals.includes(auto_interval) ? auto_interval : "24h";
+
     // Prepare agent data
     const agentData: AgentInsert = {
       user_id: user.id,
@@ -119,6 +132,9 @@ export async function POST(request: Request) {
       status: "active",
       starting_capital: 100000,
       current_value: 100000,
+      cash_balance: 100000,
+      auto_execute: auto_execute ?? false,
+      auto_interval: agentAutoInterval,
     };
 
     // Insert agent

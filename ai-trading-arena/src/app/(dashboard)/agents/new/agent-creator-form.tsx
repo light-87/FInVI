@@ -45,6 +45,8 @@ interface FormData {
     max_trades_per_day: number;
   };
   is_public: boolean;
+  auto_execute: boolean;
+  auto_interval: "3h" | "10h" | "24h";
 }
 
 export function AgentCreatorForm() {
@@ -64,6 +66,8 @@ export function AgentCreatorForm() {
       max_trades_per_day: 3,
     },
     is_public: false,
+    auto_execute: false,
+    auto_interval: "24h",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -442,6 +446,84 @@ export function AgentCreatorForm() {
               Limit daily trading activity to reduce overtrading
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Auto-Trading Section */}
+      <section className="bg-surface border border-border rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-2">
+          Auto-Trading
+        </h2>
+        <p className="text-sm text-text-tertiary mb-4">
+          Enable automatic trade execution without manual confirmation.
+        </p>
+
+        <div className="space-y-4">
+          {/* Auto-Execute Toggle */}
+          <div className="flex items-center justify-between p-4 bg-surface-elevated rounded-lg">
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Enable Auto-Trading
+              </p>
+              <p className="text-xs text-text-tertiary mt-1">
+                AI suggestions will execute automatically without confirmation
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  auto_execute: !prev.auto_execute,
+                }))
+              }
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                formData.auto_execute ? "bg-primary" : "bg-border"
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                  formData.auto_execute ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Auto Interval */}
+          {formData.auto_execute && (
+            <div className="p-4 bg-surface-elevated rounded-lg">
+              <label className="text-sm font-medium text-text-secondary block mb-3">
+                Analysis Interval
+              </label>
+              <div className="flex gap-3">
+                {(["3h", "10h", "24h"] as const).map((interval) => (
+                  <button
+                    key={interval}
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, auto_interval: interval }))
+                    }
+                    className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      formData.auto_interval === interval
+                        ? "bg-primary text-background"
+                        : "bg-surface border border-border text-text-secondary hover:text-text-primary"
+                    }`}
+                  >
+                    Every {interval.replace("h", " hours")}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-text-tertiary mt-3">
+                Your agent will automatically analyze markets and execute trades at this interval.
+              </p>
+            </div>
+          )}
+
+          {formData.auto_execute && (
+            <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-warning text-sm">
+              <strong>Note:</strong> Auto-trading will use credits automatically. Make sure you have enough credits for the analysis frequency.
+            </div>
+          )}
         </div>
       </section>
 
