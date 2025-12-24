@@ -13,8 +13,8 @@ interface DashboardNavProps {
 }
 
 const navItems = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/agents", label: "My Agents" },
-  { href: "/arena", label: "Arena" },
   { href: "/leaderboard", label: "Leaderboard" },
 ];
 

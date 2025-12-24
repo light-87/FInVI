@@ -110,12 +110,12 @@
 - [x] Credit balance display
 - [x] Stats summary cards
 
-#### Leaderboard
-- [ ] Leaderboard calculation (SQL function or query)
-- [ ] Leaderboard page UI
-- [ ] Rank badges (Top 3 special treatment)
-- [ ] User's own rank highlighted
-- [ ] Sort by different metrics
+#### Leaderboard ✅
+- [x] Leaderboard calculation (SQL function or query)
+- [x] Leaderboard page UI
+- [x] Rank badges (Top 3 special treatment)
+- [x] User's own rank highlighted
+- [x] Sort by different metrics
 
 #### Landing Page
 - [ ] Hero section with value prop
