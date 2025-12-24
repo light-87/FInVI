@@ -10,8 +10,16 @@
 
 | Week | Days Completed | Status |
 |------|----------------|--------|
-| Week 1 | 3/7 | In Progress |
-| Week 2 | 0/7 | Not Started |
+| Week 1 | 7/7 | ✅ Complete |
+| Week 2 | 3/7 | In Progress |
+
+### Major Milestones
+- ✅ Project Setup & Supabase (Days 1-2)
+- ✅ Authentication (Day 3)
+- ✅ Agent CRUD (Day 4)
+- ✅ Claude + Finnhub Integration (Day 5)
+- ✅ Dashboard & Trade Execution (Days 6-8)
+- ✅ Real Trading System with Positions (Days 9-10)
 
 ---
 
@@ -191,112 +199,127 @@
 
 ---
 
-### Day 6 - [DATE]
+### Day 6 - December 24, 2024
 
-**Focus:** Finnhub Integration
+**Focus:** Dashboard & Trade Execution (Part 1)
 
 #### Completed
-- [ ] Setup Finnhub client
-- [ ] Fetched and filtered news
-- [ ] Integrated with analyze endpoint
-- [ ] Cached news to reduce API calls
-- [ ] Tested full analysis flow
+- [x] Parsed Claude response to trade actions
+- [x] Stored trades in database
+- [x] Updated portfolio snapshots after trades
+- [x] Deducted user credits
+- [x] Built performance chart component (Recharts)
+- [x] Created trades history list
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Combined Days 6-7 into accelerated development
+- Trade execution was simulated with random P&L (later replaced with real system)
 
 #### Tomorrow
-- Trade execution
+- Dashboard polish
 
 ---
 
-### Day 7 - [DATE]
+### Day 7 - December 24, 2024
 
-**Focus:** Trade Execution
-
-#### Completed
-- [ ] Parsed Claude response to trade
-- [ ] Stored trade in database
-- [ ] Updated portfolio snapshot
-- [ ] Deducted user credits
-- [ ] Displayed result to user
-
-#### Blockers
-- 
-
-#### Notes
-- 
-
-#### Tomorrow
-- Dashboard
-
----
-
-## Week 2
-
-### Day 8 - [DATE]
-
-**Focus:** Dashboard
+**Focus:** Dashboard & Trade Execution (Part 2)
 
 #### Completed
-- [ ] Built performance chart component
-- [ ] Created trades history list
-- [ ] Added reasoning log viewer
-- [ ] Implemented cost breakdown widget
-- [ ] Added credit balance display
+- [x] Added reasoning log viewer component
+- [x] Implemented cost breakdown widget
+- [x] Added credit balance display
+- [x] Created dashboard overview page (`/dashboard`)
+- [x] Built stats summary cards
+- [x] Portfolio history API endpoint
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Dashboard now shows agent performance, trades, and costs
+- Stats cards display return %, win rate, API costs
 
 #### Tomorrow
 - Leaderboard
 
 ---
 
-### Day 9 - [DATE]
+## Week 2
+
+### Day 8 - December 24, 2024
 
 **Focus:** Leaderboard
 
 #### Completed
-- [ ] Created leaderboard calculation function
-- [ ] Built leaderboard page UI
-- [ ] Added rank badges
-- [ ] Highlighted user's position
-- [ ] Added refresh mechanism
+- [x] Created leaderboard calculation (SQL query with ranking)
+- [x] Built leaderboard page UI
+- [x] Added rank badges (Top 3 special treatment)
+- [x] Highlighted user's own rank
+- [x] Sort by total return, win rate, trade count
+- [x] Added refresh mechanism
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Leaderboard uses SQL window functions for ranking
+- Public agents only shown on leaderboard
+- User's rank always visible even if scrolled
 
 #### Tomorrow
-- Pitch dashboard
+- Real trading system
 
 ---
 
-### Day 10 - [DATE]
+### Day 9 - December 24, 2024
 
-**Focus:** Pitch Dashboard
+**Focus:** Real Trading System (Part 1)
 
 #### Completed
-- [ ] Generated mock data (50+ agents)
-- [ ] Built `/pitch` static page
-- [ ] Created impressive charts with mock data
-- [ ] Added example reasoning logs
-- [ ] Ensured no API dependencies
+- [x] Designed real P&L tracking system (REAL_TRADING_PLAN.md)
+- [x] Created positions table migration (sql/05_positions.sql)
+- [x] Added agent columns: cash_balance, auto_execute, auto_interval
+- [x] Updated TypeScript types for Position, PortfolioSummary, TradeSuggestion
+- [x] Created portfolio helper functions (lib/portfolio/helpers.ts)
+- [x] Updated analyze endpoint to return suggestion only (no auto-execute)
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Old system simulated P&L with random values
+- New system tracks real positions with entry/exit prices
+- AI now sees full portfolio context in prompts
+
+#### Tomorrow
+- Complete real trading system
+
+---
+
+### Day 10 - December 24, 2024
+
+**Focus:** Real Trading System (Part 2)
+
+#### Completed
+- [x] Created execute endpoint for trade confirmation
+- [x] Created refresh endpoint for price updates
+- [x] Built portfolio section UI component
+- [x] Built trade confirmation modal
+- [x] Updated run-analysis component with new flow
+- [x] Added auto-trading settings to agent creation form
+- [x] Fixed portfolio auto-refresh after trade execution (custom events)
+
+#### Blockers
+- None
+
+#### Notes
+- Trade flow: Analyze → Review Suggestion → Confirm → Execute
+- Portfolio section shows cash + open positions with unrealized P&L
+- Auto-refresh uses window.dispatchEvent for cross-component communication
+- Commits: 5cd6337, ab57276, 6a62e69, f011b27, 6d6a569, 2e3a2fd
 
 #### Tomorrow
 - Landing page

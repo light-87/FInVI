@@ -73,9 +73,15 @@ ai-trading-arena/
 │   │   │   └── profile/         # User settings
 │   │   ├── pitch/               # Static pitch dashboard
 │   │   ├── api/                 # API routes
-│   │   │   ├── agent/
+│   │   │   ├── agents/
+│   │   │   │   ├── route.ts     # GET/POST agents
+│   │   │   │   └── [id]/
+│   │   │   │       ├── route.ts    # GET/PATCH/DELETE agent
+│   │   │   │       ├── analyze/    # POST - get trade suggestion
+│   │   │   │       ├── execute/    # POST - confirm trade ✅ NEW
+│   │   │   │       └── refresh/    # GET/POST - refresh prices ✅ NEW
 │   │   │   ├── auth/
-│   │   │   └── analyze/
+│   │   │   └── leaderboard/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx             # Landing page
 │   │   └── globals.css
@@ -107,9 +113,11 @@ ai-trading-arena/
 │   │   │   └── types.ts         # Database types
 │   │   ├── claude/
 │   │   │   ├── client.ts        # Claude API wrapper
-│   │   │   └── prompts.ts       # Prompt templates
+│   │   │   └── prompts.ts       # Prompt templates (includes portfolio context)
 │   │   ├── finnhub/
 │   │   │   └── client.ts        # News API wrapper
+│   │   ├── portfolio/           # ✅ NEW
+│   │   │   └── helpers.ts       # Portfolio management functions
 │   │   └── utils/
 │   │       ├── format.ts        # Formatters (currency, dates)
 │   │       └── calculations.ts  # Financial calculations
@@ -447,6 +455,9 @@ FINNHUB_API_KEY=...
    - risk_params (jsonb: stop_loss, max_position, etc.)
    - is_public (boolean)
    - status (active/paused)
+   - cash_balance (decimal, default 100000) ✅ NEW
+   - auto_execute (boolean, default false) ✅ NEW
+   - auto_interval (text: '3h' | '10h' | '24h') ✅ NEW
    - created_at
 
 3. **trades**
@@ -462,7 +473,20 @@ FINNHUB_API_KEY=...
    - api_cost (decimal)
    - created_at
 
-4. **portfolio_snapshots**
+4. **positions** ✅ NEW (tracks real holdings)
+   - id (uuid)
+   - agent_id (uuid, FK to agents)
+   - ticker (varchar)
+   - quantity (integer)
+   - entry_price (decimal)
+   - entry_date (timestamp)
+   - status ('open' | 'closed')
+   - exit_price (decimal, nullable)
+   - exit_date (timestamp, nullable)
+   - realized_pnl (decimal, nullable)
+   - created_at
+
+5. **portfolio_snapshots**
    - id (uuid)
    - agent_id (uuid, FK to agents)
    - timestamp
@@ -470,7 +494,7 @@ FINNHUB_API_KEY=...
    - cash (decimal)
    - positions (jsonb)
 
-5. **leaderboard** (materialized view or table)
+6. **leaderboard** (materialized view or table)
    - agent_id
    - agent_name
    - user_display_name
@@ -488,6 +512,7 @@ Place in `/sql` folder:
 2. `02_policies.sql` - Row Level Security policies
 3. `03_functions.sql` - Database functions (calculate returns, update leaderboard)
 4. `04_seed.sql` - Demo data for testing
+5. `05_positions.sql` - Positions table + agent columns for real trading ✅ NEW
 
 ### Running Migrations
 
@@ -509,84 +534,91 @@ Or create a script that uses Supabase's JS client to run SQL.
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Days 1-3)
+### Phase 1: Foundation (Days 1-3) ✅ COMPLETE
 
-**Day 1: Project Setup**
-- [ ] Initialize Bun + Next.js 15 project
-- [ ] Configure TypeScript strict mode
-- [ ] Setup Tailwind with custom dark theme
-- [ ] Add custom fonts (download, configure)
-- [ ] Create folder structure
-- [ ] Initialize tracking files
-- [ ] Setup environment variables
-- [ ] Deploy empty shell to Vercel
+**Day 1: Project Setup** ✅
+- [x] Initialize Bun + Next.js 15 project
+- [x] Configure TypeScript strict mode
+- [x] Setup Tailwind with custom dark theme
+- [x] Add custom fonts (download, configure)
+- [x] Create folder structure
+- [x] Initialize tracking files
+- [x] Setup environment variables
+- [x] Deploy empty shell to Vercel
 
-**Day 2: Supabase Setup**
-- [ ] Create Supabase project
-- [ ] Write and run schema SQL
-- [ ] Configure RLS policies
-- [ ] Setup Supabase clients (browser + server)
-- [ ] Test connection from Next.js
+**Day 2: Supabase Setup** ✅
+- [x] Create Supabase project
+- [x] Write and run schema SQL
+- [x] Configure RLS policies
+- [x] Setup Supabase clients (browser + server)
+- [x] Test connection from Next.js
 
-**Day 3: Authentication**
-- [ ] Implement login page
-- [ ] Implement signup page
-- [ ] Setup auth middleware
-- [ ] Create protected route wrapper
-- [ ] Test auth flow end-to-end
+**Day 3: Authentication** ✅
+- [x] Implement login page
+- [x] Implement signup page
+- [x] Setup auth middleware
+- [x] Create protected route wrapper
+- [x] Test auth flow end-to-end
 
-### Phase 2: Core Features (Days 4-8)
+### Phase 2: Core Features (Days 4-8) ✅ COMPLETE
 
-**Day 4: Agent Creation**
-- [ ] Design agent creation form UI
-- [ ] Build form with validation
-- [ ] Implement save to database
-- [ ] Create agent list view
-- [ ] Add agent detail view
+**Day 4: Agent Creation** ✅
+- [x] Design agent creation form UI
+- [x] Build form with validation
+- [x] Implement save to database
+- [x] Create agent list view
+- [x] Add agent detail view
 
-**Day 5: Claude API Integration**
-- [ ] Setup Claude client wrapper
-- [ ] Design prompt template
-- [ ] Build `/api/analyze` endpoint
-- [ ] Test with hardcoded news
-- [ ] Handle response parsing
+**Day 5: Claude API Integration** ✅
+- [x] Setup Claude client wrapper
+- [x] Design prompt template
+- [x] Build `/api/analyze` endpoint
+- [x] Test with hardcoded news
+- [x] Handle response parsing
 
-**Day 6: Finnhub Integration**
-- [ ] Setup Finnhub client
-- [ ] Fetch and filter news
-- [ ] Integrate with analyze endpoint
-- [ ] Cache news to reduce API calls
-- [ ] Test full analysis flow
+**Day 6: Finnhub + Dashboard (Part 1)** ✅
+- [x] Setup Finnhub client
+- [x] Fetch and filter news
+- [x] Integrate with analyze endpoint
+- [x] Parse Claude response to trade
+- [x] Store trade in database
+- [x] Built performance chart (Recharts)
 
-**Day 7: Trade Execution**
-- [ ] Parse Claude response to trade
-- [ ] Store trade in database
-- [ ] Update portfolio snapshot
-- [ ] Deduct user credits
-- [ ] Display result to user
+**Day 7: Dashboard (Part 2)** ✅
+- [x] Update portfolio snapshot
+- [x] Deduct user credits
+- [x] Display result to user
+- [x] Build reasoning log viewer
+- [x] Implement cost breakdown widget
+- [x] Add credit balance display
 
-**Day 8: Dashboard**
-- [ ] Build performance chart component
-- [ ] Create trades history list
-- [ ] Add reasoning log viewer
-- [ ] Implement cost breakdown widget
-- [ ] Add credit balance display
+**Day 8: Leaderboard** ✅
+- [x] Create leaderboard calculation function
+- [x] Build leaderboard page UI
+- [x] Add rank badges
+- [x] Highlight user's position
+- [x] Add refresh mechanism
 
-### Phase 3: Competition & Polish (Days 9-12)
+### Phase 2.5: Real Trading System (Days 9-10) ✅ COMPLETE
 
-**Day 9: Leaderboard**
-- [ ] Create leaderboard calculation function
-- [ ] Build leaderboard page UI
-- [ ] Add rank badges
-- [ ] Highlight user's position
-- [ ] Add refresh mechanism
+**Day 9: Database & Backend** ✅
+- [x] Create positions table (sql/05_positions.sql)
+- [x] Add agent columns (cash_balance, auto_execute, auto_interval)
+- [x] Update TypeScript types (Position, PortfolioSummary, TradeSuggestion)
+- [x] Create portfolio helper functions
+- [x] Update analyze endpoint (suggestion only, no auto-execute)
+- [x] Build portfolio context for AI prompts
 
-**Day 10: Pitch Dashboard**
-- [ ] Generate mock data (50+ agents)
-- [ ] Build `/pitch` static page
-- [ ] Create impressive charts with mock data
-- [ ] Add example reasoning logs
-- [ ] Ensure no API dependencies
+**Day 10: Execute/Refresh & UI** ✅
+- [x] Create POST `/api/agents/[id]/execute` endpoint
+- [x] Create GET/POST `/api/agents/[id]/refresh` endpoint
+- [x] Build portfolio section component
+- [x] Build trade confirmation modal
+- [x] Update run-analysis with new flow
+- [x] Add auto-trading settings to agent creation
+- [x] Fix portfolio auto-refresh (custom events)
+
+### Phase 3: Competition & Polish (Days 11-14)
 
 **Day 11: Landing Page**
 - [ ] Hero section with value prop
@@ -596,27 +628,25 @@ Or create a script that uses Supabase's JS client to run SQL.
 - [ ] Cost transparency section
 - [ ] CTA to signup
 
-**Day 12: Polish & Animations**
+**Day 12: Pitch Dashboard**
+- [ ] Generate mock data (50+ agents)
+- [ ] Build `/pitch` static page
+- [ ] Create impressive charts with mock data
+- [ ] Add example reasoning logs
+- [ ] Ensure no API dependencies
+
+**Day 13: Polish & Testing**
 - [ ] Add loading states
 - [ ] Implement skeleton screens
-- [ ] Add micro-interactions
-- [ ] Test responsive (basic)
-- [ ] Fix visual bugs
-
-### Phase 4: Final (Days 13-14)
-
-**Day 13: Testing & Fixes**
 - [ ] Test complete user flow
 - [ ] Test edge cases
 - [ ] Fix bugs found
-- [ ] Performance check
-- [ ] Security review
 
 **Day 14: Deploy & Document**
 - [ ] Final deployment
 - [ ] Create demo accounts
 - [ ] Record demo video (optional)
-- [ ] Update PROGRESS.md
+- [ ] Update all documentation
 - [ ] Prepare for submission
 
 ---
@@ -635,7 +665,10 @@ Or create a script that uses Supabase's JS client to run SQL.
 | GET | `/api/agents/[id]` | Get agent details | Yes |
 | PATCH | `/api/agents/[id]` | Update agent | Yes |
 | DELETE | `/api/agents/[id]` | Delete agent | Yes |
-| POST | `/api/agents/[id]/analyze` | Run analysis | Yes |
+| POST | `/api/agents/[id]/analyze` | Get trade suggestion (no execute) | Yes |
+| POST | `/api/agents/[id]/execute` | Confirm and execute trade | Yes |
+| GET | `/api/agents/[id]/refresh` | Refresh portfolio prices | Yes |
+| POST | `/api/agents/[id]/refresh` | Refresh prices + create snapshot | Yes |
 | GET | `/api/agents/[id]/trades` | Get trade history | Yes |
 | GET | `/api/leaderboard` | Get public rankings | No |
 | GET | `/api/news` | Fetch latest news | Yes |
