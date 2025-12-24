@@ -1,8 +1,8 @@
 # TODO - AI Trading Arena
 
 **Current Sprint:** Week 1
-**Days Remaining:** 6
-**Last Updated:** 2024-12-23
+**Days Remaining:** 4
+**Last Updated:** 2024-12-24
 
 ---
 
@@ -21,39 +21,38 @@
 
 ### P0 - Must Have (Demo Blocker)
 
-#### Day 1: Project Setup
-- [ ] Initialize Bun + Next.js 15 project
-  - Command: `bun create next-app ai-trading-arena`
-- [ ] Configure TypeScript strict mode
-- [ ] Setup Tailwind with custom dark theme config
-- [ ] Download and configure custom fonts (JetBrains Mono, Outfit)
-- [ ] Create full folder structure per IMPLEMENTATION_PLAN.md
-- [ ] Create `.env.local` with all environment variables
-- [ ] Create `.env.example` template (no secrets)
-- [ ] Deploy empty shell to Vercel
-- [ ] Verify Vercel deployment works
+#### Day 1: Project Setup ✅
+- [x] Initialize Bun + Next.js 15 project
+- [x] Configure TypeScript strict mode
+- [x] Setup Tailwind with custom dark theme config
+- [x] Download and configure custom fonts (JetBrains Mono, Outfit)
+- [x] Create full folder structure per IMPLEMENTATION_PLAN.md
+- [x] Create `.env.local` with all environment variables
+- [x] Create `.env.example` template (no secrets)
+- [x] Deploy empty shell to Vercel
+- [x] Verify Vercel deployment works
 
-#### Day 2: Supabase Setup
-- [ ] Create new Supabase project
-- [ ] Write `01_schema.sql` for all tables
-- [ ] Run schema SQL in Supabase Dashboard
-- [ ] Write `02_policies.sql` for RLS
-- [ ] Run RLS policies SQL
-- [ ] Create server Supabase client (service key)
-- [ ] Create browser Supabase client (anon key)
-- [ ] Test database connection from Next.js API route
-- [ ] Generate TypeScript types from Supabase
+#### Day 2: Supabase Setup ✅
+- [x] Create new Supabase project
+- [x] Write `01_schema.sql` for all tables
+- [x] Run schema SQL in Supabase Dashboard
+- [x] Write `02_policies.sql` for RLS
+- [x] Run RLS policies SQL
+- [x] Create server Supabase client (service key)
+- [x] Create browser Supabase client (anon key)
+- [x] Test database connection from Next.js API route
+- [x] Generate TypeScript types from Supabase
 
-#### Day 3: Authentication
-- [ ] Create login page (`/login`)
-- [ ] Create signup page (`/signup`)
-- [ ] Implement Supabase Auth signup flow
-- [ ] Implement Supabase Auth login flow
-- [ ] Setup auth middleware for protected routes
-- [ ] Create auth context/hook
-- [ ] Add logout functionality
-- [ ] Test complete auth flow end-to-end
-- [ ] Redirect to dashboard after login
+#### Day 3: Authentication ✅
+- [x] Create login page (`/login`)
+- [x] Create signup page (`/signup`)
+- [x] Implement Supabase Auth signup flow
+- [x] Implement Supabase Auth login flow
+- [x] Setup auth middleware for protected routes
+- [x] Create auth context/hook
+- [x] Add logout functionality
+- [x] Test complete auth flow end-to-end
+- [x] Redirect to dashboard after login
 
 #### Day 4: Agent Creation ✅
 - [x] Design agent creation form (mockup first)
@@ -97,6 +96,19 @@
 - [x] Performance chart component
 - [x] Trade detail modal with reasoning viewer
 - [x] Portfolio history API endpoint
+
+#### Day 9-10: Real Trading System ✅
+- [x] Add positions table to database (sql/05_positions.sql)
+- [x] Add cash_balance, auto_execute, auto_interval to agents table
+- [x] Update TypeScript types for positions
+- [x] Create portfolio helper functions (lib/portfolio/helpers.ts)
+- [x] Update analyze endpoint to return suggestion only
+- [x] Create execute endpoint for trade confirmation
+- [x] Create refresh endpoint for price updates
+- [x] Build portfolio section UI component
+- [x] Build trade confirmation modal
+- [x] Add auto-trading settings to agent creation form
+- [x] Auto-refresh portfolio after trade execution
 
 ---
 
@@ -179,13 +191,14 @@ These are good ideas but NOT for the 2-week demo:
 - [ ] Light theme option
 - [ ] Mobile app
 - [ ] Payment integration (Stripe)
-- [ ] Scheduled analyses (paid tier)
+- [ ] Scheduled analyses (paid tier) - partially done with auto_execute
 - [ ] Team/collaborative agents
 - [ ] API for power users
 - [ ] Admin dashboard
 - [ ] Email notifications
 - [ ] Advanced backtesting
 - [ ] Multiple asset classes
+- [ ] True cron jobs for auto-trading
 
 ---
 
@@ -197,6 +210,20 @@ These are good ideas but NOT for the 2-week demo:
 | Finnhub API calls | API key | ✅ Working |
 | Supabase connection | Project created | ✅ Working |
 | Vercel deploy | GitHub repo | ⏳ Need to deploy |
+| Real trading | Positions table | ✅ Implemented |
+
+---
+
+## Recent Commits (Real Trading System)
+
+| Commit | Description |
+|--------|-------------|
+| `5cd6337` | Add positions table and updated TypeScript types |
+| `ab57276` | Update analyze endpoint for suggestion-only mode |
+| `6a62e69` | Add execute and refresh endpoints |
+| `f011b27` | Add portfolio section and trade confirmation modal |
+| `6d6a569` | Add auto-trading settings to agent creation |
+| `2e3a2fd` | Fix portfolio auto-refresh after trade execution |
 
 ---
 

@@ -72,6 +72,10 @@ export type Database = {
           winning_trades: number;
           total_api_cost: number;
           last_analysis_at: string | null;
+          cash_balance: number;
+          auto_execute: boolean;
+          auto_interval: "3h" | "10h" | "24h";
+          next_auto_analysis_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -94,6 +98,10 @@ export type Database = {
           winning_trades?: number;
           total_api_cost?: number;
           last_analysis_at?: string | null;
+          cash_balance?: number;
+          auto_execute?: boolean;
+          auto_interval?: "3h" | "10h" | "24h";
+          next_auto_analysis_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -116,6 +124,54 @@ export type Database = {
           winning_trades?: number;
           total_api_cost?: number;
           last_analysis_at?: string | null;
+          cash_balance?: number;
+          auto_execute?: boolean;
+          auto_interval?: "3h" | "10h" | "24h";
+          next_auto_analysis_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      positions: {
+        Row: {
+          id: string;
+          agent_id: string;
+          ticker: string;
+          quantity: number;
+          entry_price: number;
+          entry_date: string;
+          status: "open" | "closed";
+          exit_price: number | null;
+          exit_date: string | null;
+          realized_pnl: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agent_id: string;
+          ticker: string;
+          quantity: number;
+          entry_price: number;
+          entry_date?: string;
+          status?: "open" | "closed";
+          exit_price?: number | null;
+          exit_date?: string | null;
+          realized_pnl?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agent_id?: string;
+          ticker?: string;
+          quantity?: number;
+          entry_price?: number;
+          entry_date?: string;
+          status?: "open" | "closed";
+          exit_price?: number | null;
+          exit_date?: string | null;
+          realized_pnl?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -316,6 +372,11 @@ export type PortfolioSnapshotInsert = Database["public"]["Tables"]["portfolio_sn
 
 export type LeaderboardEntry = Database["public"]["Tables"]["leaderboard"]["Row"];
 
+// Position table types
+export type PositionRow = Database["public"]["Tables"]["positions"]["Row"];
+export type PositionInsert = Database["public"]["Tables"]["positions"]["Insert"];
+export type PositionUpdate = Database["public"]["Tables"]["positions"]["Update"];
+
 // Risk parameters type
 export type RiskParams = {
   stop_loss_pct: number;
@@ -323,7 +384,7 @@ export type RiskParams = {
   max_trades_per_day: number;
 };
 
-// Position type for portfolio snapshots
+// Position type for portfolio snapshots (with calculated fields)
 export type Position = {
   ticker: string;
   quantity: number;
@@ -332,4 +393,55 @@ export type Position = {
   value: number;
   profit_loss: number;
   profit_loss_pct: number;
+};
+
+// Extended position with unrealized P&L for display
+export type PositionWithPnL = PositionRow & {
+  current_price: number;
+  current_value: number;
+  unrealized_pnl: number;
+  unrealized_pnl_pct: number;
+};
+
+// Portfolio summary type for API responses
+export type PortfolioSummary = {
+  cash: number;
+  positions: PositionWithPnL[];
+  total_value: number;
+  total_return_pct: number;
+};
+
+// Trade suggestion from AI analysis
+export type TradeSuggestion = {
+  action: "BUY" | "SELL" | "HOLD";
+  ticker: string;
+  quantity: number;
+  current_price: number;
+  total_cost: number;
+  reasoning: string;
+  confidence: number;
+};
+
+// Analysis response with suggestion and portfolio context
+export type AnalysisResponse = {
+  suggestion: TradeSuggestion;
+  portfolio: PortfolioSummary;
+};
+
+// Execute trade request
+export type ExecuteTradeRequest = {
+  action: "BUY" | "SELL";
+  ticker: string;
+  quantity: number;
+  price: number;
+  enable_auto?: boolean;
+  auto_interval?: "3h" | "10h" | "24h";
+};
+
+// Execute trade response
+export type ExecuteTradeResponse = {
+  success: boolean;
+  trade: Trade;
+  position?: PositionRow;
+  portfolio: PortfolioSummary;
 };

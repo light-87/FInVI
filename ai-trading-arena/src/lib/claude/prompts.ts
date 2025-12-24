@@ -1,4 +1,4 @@
-import type { RiskParams } from "@/types/database";
+import type { RiskParams, PortfolioSummary, PositionWithPnL } from "@/types/database";
 
 /**
  * Build the system prompt for a trading agent
@@ -24,6 +24,7 @@ You MUST respond with valid JSON in exactly this format:
 {
   "action": "BUY" | "SELL" | "HOLD",
   "ticker": "SYMBOL",
+  "quantity": 10,
   "confidence": 0.0-1.0,
   "reasoning": "Your detailed analysis explaining why you made this decision...",
   "news_summary": "Brief 1-2 sentence summary of the most relevant news...",
@@ -34,13 +35,17 @@ You MUST respond with valid JSON in exactly this format:
 ## Rules
 1. ONLY output the JSON block - no additional text before or after
 2. "ticker" should be a valid US stock symbol (e.g., AAPL, MSFT, GOOGL)
-3. "confidence" should reflect how certain you are (0.5 = uncertain, 0.9 = very confident)
-4. If no clear opportunity exists, choose "HOLD" with appropriate reasoning
-5. Consider your risk parameters when making decisions
-6. Be specific in your reasoning - reference actual news and data
+3. "quantity" is the number of shares to buy or sell (must be a positive integer)
+4. "confidence" should reflect how certain you are (0.5 = uncertain, 0.9 = very confident)
+5. If no clear opportunity exists, choose "HOLD" with appropriate reasoning
+6. Consider your risk parameters AND your available cash when making decisions
+7. For SELL actions, you can only sell shares you currently own
+8. For BUY actions, ensure total cost (quantity * price) doesn't exceed available cash
+9. Be specific in your reasoning - reference actual news and data
 
 ## Important
-- You are paper trading with $100,000 starting capital
+- Your trades will be executed with REAL position tracking
+- You have actual positions that need to be managed
 - Your performance is tracked on a public leaderboard
 - Other AI agents are competing against you
 - Make decisions that maximize risk-adjusted returns`;
@@ -93,6 +98,63 @@ ${recentTradesStr}`;
 }
 
 /**
+ * Build comprehensive portfolio context with real positions and P&L
+ * This is the main function for real trading mode
+ */
+export function buildRealPortfolioContext(
+  portfolio: PortfolioSummary,
+  startingCapital: number
+): string {
+  const formatMoney = (n: number) =>
+    n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  const formatPnL = (n: number) => {
+    const sign = n >= 0 ? "+" : "";
+    return sign + formatMoney(n);
+  };
+
+  const formatPct = (n: number) => {
+    const sign = n >= 0 ? "+" : "";
+    return sign + n.toFixed(2) + "%";
+  };
+
+  // Build positions string
+  let positionsStr: string;
+  if (portfolio.positions.length === 0) {
+    positionsStr = "  No open positions";
+  } else {
+    positionsStr = portfolio.positions
+      .map((p: PositionWithPnL, i: number) => {
+        return `  ${i + 1}. ${p.ticker} - ${p.quantity} shares @ $${p.entry_price.toFixed(2)} (current: $${p.current_price.toFixed(2)})
+     Value: ${formatMoney(p.current_value)}
+     Unrealized P&L: ${formatPnL(p.unrealized_pnl)} (${formatPct(p.unrealized_pnl_pct)})`;
+      })
+      .join("\n\n");
+  }
+
+  // Calculate total unrealized P&L
+  const totalUnrealizedPnL = portfolio.positions.reduce(
+    (sum: number, p: PositionWithPnL) => sum + p.unrealized_pnl,
+    0
+  );
+
+  return `=== PORTFOLIO STATUS ===
+
+CASH AVAILABLE: ${formatMoney(portfolio.cash)}
+
+CURRENT POSITIONS:
+${positionsStr}
+
+PORTFOLIO SUMMARY:
+  Total Value: ${formatMoney(portfolio.total_value)}
+  Starting Capital: ${formatMoney(startingCapital)}
+  Total Return: ${formatPct(portfolio.total_return_pct)}
+  Unrealized P&L: ${formatPnL(totalUnrealizedPnL)}
+
+========================`;
+}
+
+/**
  * Build the news context string from Finnhub news items
  */
 export function buildNewsContext(
@@ -127,6 +189,7 @@ ${item.summary}`;
 export interface TradeDecision {
   action: "BUY" | "SELL" | "HOLD";
   ticker: string;
+  quantity: number;
   confidence: number;
   reasoning: string;
   news_summary: string;
@@ -157,9 +220,16 @@ export function parseTradeDecision(response: string): TradeDecision | null {
       return null;
     }
 
+    // Parse quantity - default to 1 if not provided or invalid
+    let quantity = 1;
+    if (typeof parsed.quantity === "number" && parsed.quantity > 0) {
+      quantity = Math.floor(parsed.quantity);
+    }
+
     return {
       action: parsed.action,
       ticker: parsed.ticker.toUpperCase(),
+      quantity,
       confidence: parsed.confidence,
       reasoning: parsed.reasoning || "No reasoning provided",
       news_summary: parsed.news_summary || "No summary provided",

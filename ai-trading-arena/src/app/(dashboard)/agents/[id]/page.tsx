@@ -4,6 +4,7 @@ import type { Agent, Trade, RiskParams } from "@/types/database";
 import Link from "next/link";
 import { AgentActions } from "./agent-actions";
 import { RunAnalysis } from "./run-analysis";
+import { PortfolioSection } from "./portfolio-section";
 import { PerformanceChart } from "@/components/performance-chart";
 import { TradeDetailModal } from "./trade-detail-modal";
 
@@ -123,6 +124,13 @@ export default async function AgentDetailPage({ params }: PageProps) {
           subtext="LLM usage"
         />
       </div>
+
+      {/* Portfolio Section - Real positions and P&L */}
+      <PortfolioSection
+        agentId={agent.id}
+        initialCash={agent.cash_balance}
+        startingCapital={agent.starting_capital}
+      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
