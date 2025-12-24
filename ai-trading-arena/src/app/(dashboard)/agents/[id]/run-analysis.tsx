@@ -99,7 +99,11 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
       setSuccessMessage(
         `Trade executed: ${analysisResult.suggestion.action} ${analysisResult.suggestion.quantity} ${analysisResult.suggestion.ticker} @ $${analysisResult.suggestion.current_price.toFixed(2)}`
       );
-      router.refresh(); // Refresh page to show new trade and updated portfolio
+
+      // Dispatch event to notify portfolio section to refresh
+      window.dispatchEvent(new CustomEvent("trade-executed"));
+
+      router.refresh(); // Refresh page to show new trade
     } catch (err) {
       setError(err instanceof Error ? err.message : "Trade execution failed");
       setShowConfirmation(false);

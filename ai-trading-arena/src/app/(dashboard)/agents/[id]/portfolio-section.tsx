@@ -25,6 +25,19 @@ export function PortfolioSection({
     fetchPortfolio();
   }, [agentId]);
 
+  // Listen for trade execution events to auto-refresh
+  useEffect(() => {
+    const handleTradeExecuted = () => {
+      console.log("[Portfolio] Trade executed, refreshing...");
+      fetchPortfolio(false);
+    };
+
+    window.addEventListener("trade-executed", handleTradeExecuted);
+    return () => {
+      window.removeEventListener("trade-executed", handleTradeExecuted);
+    };
+  }, [agentId]);
+
   const fetchPortfolio = async (createSnapshot = false) => {
     try {
       const method = createSnapshot ? "POST" : "GET";
