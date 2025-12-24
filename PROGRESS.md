@@ -103,47 +103,91 @@
 
 ---
 
-### Day 4 - [DATE]
+### Day 4 - December 23, 2024
 
 **Focus:** Agent Creation
 
 #### Completed
-- [ ] Designed agent creation form UI
-- [ ] Built form with validation
-- [ ] Implemented save to database
-- [ ] Created agent list view
-- [ ] Added agent detail view
+- [x] Created agent creation page (`/agents/new`) with full form
+- [x] Built AgentCreatorForm component with validation:
+  - Name (required, max 50 chars)
+  - Description (optional)
+  - LLM model selection (Claude Sonnet/Opus, GPT-4/GPT-4 Turbo)
+  - System prompt with default template
+  - News sources multi-select (Finnhub, SEC, Earnings, Social)
+  - Risk parameters with sliders (stop loss, max position, max trades/day)
+  - Public/private toggle
+- [x] Implemented POST `/api/agents` endpoint with validation
+- [x] Created agent detail page (`/agents/[id]`) showing:
+  - Stats grid (current value, return %, win rate, API cost)
+  - System prompt viewer
+  - Risk parameters display
+  - News sources display
+  - Recent trades table
+- [x] Added edit functionality (`/agents/[id]/edit`)
+- [x] Added delete functionality with confirmation modal
+- [x] Added status toggle (active/paused)
+- [x] Created API routes: GET, POST, PATCH, DELETE for agents
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- All Supabase queries use explicit type casting per ERRORS.md TS-002
+- Using PostgrestError type from @supabase/supabase-js for error handling
+- Forms reuse similar structure between create and edit
+- Delete cascades to trades/snapshots via database FK
 
 #### Tomorrow
 - Claude API integration
 
 ---
 
-### Day 5 - [DATE]
+### Day 5 - December 23, 2024
 
-**Focus:** Claude API Integration
+**Focus:** Claude API Integration + Finnhub
 
 #### Completed
-- [ ] Setup Claude client wrapper
-- [ ] Designed prompt template
-- [ ] Built `/api/analyze` endpoint
-- [ ] Tested with hardcoded news
-- [ ] Handled response parsing
+- [x] Created Claude client wrapper (`src/lib/claude/client.ts`)
+  - Uses fetch directly (no SDK dependency)
+  - Supports claude-sonnet and claude-opus models
+  - Tracks token usage and calculates API costs
+- [x] Designed comprehensive prompt templates (`src/lib/claude/prompts.ts`)
+  - System prompt builder with risk parameters
+  - Portfolio context builder
+  - News context formatter
+  - JSON response parser with validation
+- [x] Built `/api/agents/[id]/analyze` endpoint
+  - Auth + credits check
+  - Daily trade limit enforcement
+  - Fetches news (Finnhub or mock)
+  - Calls Claude API
+  - Parses and validates response
+  - Creates trade record
+  - Updates agent stats
+  - Deducts user credits
+- [x] Created Finnhub client (`src/lib/finnhub/client.ts`)
+  - Market news fetching
+  - Company-specific news
+  - Stock quote fetching
+  - Mock data for testing without API key
+- [x] Added RunAnalysis component for agent detail page
+  - Loading states
+  - Result display with action, ticker, confidence
+  - Reasoning and news summary
+  - Token usage and cost display
 
 #### Blockers
-- 
+- None
 
 #### Notes
-- 
+- Using fetch directly instead of Anthropic SDK (simpler, no extra dependency)
+- Mock news/quotes available when API keys not set
+- Analysis costs tracked per trade and per agent
+- Credits deducted after each successful analysis
 
 #### Tomorrow
-- Finnhub integration
+- Trade execution and portfolio updates
 
 ---
 
