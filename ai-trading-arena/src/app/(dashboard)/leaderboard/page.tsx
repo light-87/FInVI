@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable } from "./leaderboard-table";
 
 export const metadata = {
-  title: "Leaderboard | AI Trading Arena",
+  title: "Leaderboard | Vivy",
   description: "See the top performing AI trading agents",
 };
 

@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps) {
     .single()) as { data: { name: string } | null };
 
   return {
-    title: agent ? `Edit ${agent.name} | AI Trading Arena` : "Edit Agent | AI Trading Arena",
+    title: agent ? `Edit ${agent.name} | Vivy` : "Edit Agent | Vivy",
   };
 }
 

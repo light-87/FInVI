@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Agent } from "@/types/database";
 
 export const metadata = {
-  title: "My Agents | AI Trading Arena",
+  title: "My Agents | Vivy",
   description: "Manage your AI trading agents",
 };
 

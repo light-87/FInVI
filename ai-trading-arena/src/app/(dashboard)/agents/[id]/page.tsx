@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps) {
     .single()) as { data: { name: string } | null };
 
   return {
-    title: agent ? `${agent.name} | AI Trading Arena` : "Agent | AI Trading Arena",
+    title: agent ? `${agent.name} | Vivy` : "Agent | Vivy",
   };
 }
 
@@ -100,6 +100,9 @@ export default async function AgentDetailPage({ params }: PageProps) {
 
         <AgentActions agentId={agent.id} agentName={agent.name} status={agent.status} />
       </div>
+
+      {/* Run Analysis - Prominent placement at top */}
+      <RunAnalysis agentId={agent.id} isActive={agent.status === "active"} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -266,8 +269,6 @@ export default async function AgentDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Run Analysis */}
-      <RunAnalysis agentId={agent.id} isActive={agent.status === "active"} />
     </div>
   );
 }

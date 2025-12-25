@@ -2,8 +2,8 @@ import Link from "next/link";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
-  title: "Login | AI Trading Arena",
-  description: "Sign in to your AI Trading Arena account",
+  title: "Login | Vivy",
+  description: "Sign in to your Vivy account",
 };
 
 export default function LoginPage() {
@@ -13,7 +13,7 @@ export default function LoginPage() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold font-display text-text-primary mb-2">
-            AI Trading <span className="text-primary">Arena</span>
+            <span className="text-primary">Vivy</span>
           </h1>
           <p className="text-text-secondary">
             Sign in to manage your AI agents
@@ -35,7 +35,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-surface text-text-tertiary">
-                New to AI Trading Arena?
+                New to Vivy?
               </span>
             </div>
           </div>
