@@ -135,12 +135,15 @@ export async function POST(request: Request, { params }: RouteContext) {
     let newsSource = "mock";
 
     if (preferredSource === "perplexity") {
-      // Use Perplexity for AI-powered news search
+      // Use Perplexity for AI-powered news search tailored to agent's focus
       if (process.env.PERPLEXITY_API_KEY) {
-        news = await getPerplexityMarketNews(portfolioTickers.length > 0 ? portfolioTickers : undefined);
+        news = await getPerplexityMarketNews({
+          agentDescription: agent.description || undefined,
+          tickers: portfolioTickers.length > 0 ? portfolioTickers : undefined,
+        });
         if (news.length > 0) {
           newsSource = "perplexity";
-          console.log(`[Analyze] Using Perplexity news: ${news.length} items`);
+          console.log(`[Analyze] Using Perplexity news: ${news.length} items (description: "${agent.description?.slice(0, 50)}...")`);
         } else {
           news = getMockPerplexityNews();
           console.log("[Analyze] Perplexity returned no news, using mock data");

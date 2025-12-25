@@ -59,7 +59,6 @@ export async function searchFinancialNews(
   options?: {
     model?: "sonar" | "sonar-pro";
     maxResults?: number;
-    domains?: string[];
   }
 ): Promise<PerplexityNewsResult> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
@@ -77,10 +76,21 @@ export async function searchFinancialNews(
   const model = options?.model || "sonar";
   const maxResults = options?.maxResults || 10;
 
-  const systemPrompt = `You are a financial news analyst. Search for the latest financial news and market updates.
-Return the news in a structured format with clear headlines and summaries.
-Focus on actionable market information, earnings reports, analyst ratings, and significant market events.
-For each news item, include: the headline, a 2-3 sentence summary, and the source.
+  // System prompt focused on NEWS ONLY - no analysis or recommendations
+  const systemPrompt = `You are a financial news aggregator. Your ONLY job is to find and report the latest relevant news articles.
+
+IMPORTANT RULES:
+1. ONLY return factual news items - headlines and brief summaries
+2. DO NOT provide investment advice, buy/sell recommendations, or analysis
+3. DO NOT suggest whether stocks are good investments
+4. DO NOT include your opinions about market direction
+5. Focus on finding the most recent and relevant news matching the search criteria
+
+FORMAT: Return each news item as:
+- A clear headline
+- A 2-3 sentence factual summary of what happened
+- The source name
+
 Return up to ${maxResults} of the most relevant and recent news items.`;
 
   const messages: PerplexityMessage[] = [
@@ -280,12 +290,14 @@ function extractSourceFromLine(line: string): string | null {
 }
 
 /**
- * Build a search query for stock market news
+ * Build a search query for stock market news based on agent's investment focus
  */
-export function buildStockNewsQuery(
-  tickers?: string[],
-  context?: string
-): string {
+export function buildStockNewsQuery(options: {
+  agentDescription?: string;
+  tickers?: string[];
+}): string {
+  const { agentDescription, tickers } = options;
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -293,29 +305,40 @@ export function buildStockNewsQuery(
     day: "numeric",
   });
 
-  let query = `Latest stock market news and financial updates for ${today}. `;
+  let query = `Find the latest financial news as of ${today}. `;
 
+  // Use agent description as the primary search focus
+  if (agentDescription && agentDescription.trim()) {
+    query += `
+
+SEARCH FOCUS: ${agentDescription}
+
+Find news articles that are most relevant to this investment focus. `;
+  }
+
+  // Add portfolio tickers as secondary context
   if (tickers && tickers.length > 0) {
-    query += `Focus on news related to these stocks: ${tickers.join(", ")}. `;
+    query += `Also include any recent news about these stocks I currently hold: ${tickers.join(", ")}. `;
   }
 
-  query += `Include major market movements, earnings reports, analyst upgrades/downgrades,
-and significant corporate announcements. Prioritize actionable trading information.`;
+  query += `
 
-  if (context) {
-    query += ` Additional context: ${context}`;
-  }
+Return only factual news headlines and summaries. Do not recommend whether to buy or sell anything.`;
 
   return query;
 }
 
 /**
- * Get general market news using Perplexity
+ * Get market news using Perplexity, tailored to agent's investment focus
  */
-export async function getPerplexityMarketNews(
-  tickers?: string[]
-): Promise<NewsItem[]> {
-  const query = buildStockNewsQuery(tickers);
+export async function getPerplexityMarketNews(options: {
+  agentDescription?: string;
+  tickers?: string[];
+}): Promise<NewsItem[]> {
+  const query = buildStockNewsQuery(options);
+
+  console.log(`[Perplexity] Search query: ${query.slice(0, 200)}...`);
+
   const result = await searchFinancialNews(query, {
     model: "sonar",
     maxResults: 10,
