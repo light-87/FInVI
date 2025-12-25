@@ -24,6 +24,9 @@ interface AnalysisMeta {
   cached_at?: string;
   expires_at?: string;
   recommendation_id?: string | null;
+  is_stop_loss?: boolean;
+  stop_loss_pct?: number;
+  position_loss_pct?: number;
 }
 
 interface RunAnalysisProps {
@@ -313,6 +316,9 @@ export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterv
             setShowConfirmation(false);
             handleRunAnalysis(true);
           }}
+          isStopLoss={analysisMeta.is_stop_loss}
+          stopLossPct={analysisMeta.stop_loss_pct}
+          positionLossPct={analysisMeta.position_loss_pct}
         />
       )}
     </>

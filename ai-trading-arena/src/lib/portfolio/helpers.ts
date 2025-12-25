@@ -193,3 +193,47 @@ export function calculateSuggestedQuantity(
   const quantity = Math.floor(maxAllocation / price);
   return Math.max(1, quantity); // At least 1 share
 }
+
+/**
+ * Check if any position has triggered stop-loss
+ * Returns the worst position that should be sold, or null if none triggered
+ */
+export function checkStopLoss(
+  positionsWithPnL: PositionWithPnL[],
+  stopLossPct: number
+): PositionWithPnL | null {
+  // Find positions where unrealized loss exceeds stop-loss threshold
+  const triggeredPositions = positionsWithPnL.filter(
+    (p) => p.unrealized_pnl_pct <= -stopLossPct
+  );
+
+  if (triggeredPositions.length === 0) {
+    return null;
+  }
+
+  // Return the worst performing position (most negative)
+  return triggeredPositions.reduce((worst, current) =>
+    current.unrealized_pnl_pct < worst.unrealized_pnl_pct ? current : worst
+  );
+}
+
+/**
+ * Validate if a BUY order respects max position size
+ * Returns true if the order is within limits
+ */
+export function validateMaxPositionSize(
+  currentPortfolioValue: number,
+  orderValue: number,
+  existingPositionValue: number,
+  maxPositionPct: number
+): { valid: boolean; maxAllowed: number; currentPct: number } {
+  const maxAllocation = currentPortfolioValue * (maxPositionPct / 100);
+  const totalPositionValue = existingPositionValue + orderValue;
+  const currentPct = (totalPositionValue / currentPortfolioValue) * 100;
+
+  return {
+    valid: totalPositionValue <= maxAllocation,
+    maxAllowed: maxAllocation - existingPositionValue,
+    currentPct,
+  };
+}

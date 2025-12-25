@@ -14,6 +14,9 @@ interface TradeConfirmationModalProps {
   isCached?: boolean;
   cacheAgeMinutes?: number;
   onRefresh?: () => void;
+  isStopLoss?: boolean;
+  stopLossPct?: number;
+  positionLossPct?: number;
 }
 
 export function TradeConfirmationModal({
@@ -27,6 +30,9 @@ export function TradeConfirmationModal({
   isCached,
   cacheAgeMinutes,
   onRefresh,
+  isStopLoss,
+  stopLossPct,
+  positionLossPct,
 }: TradeConfirmationModalProps) {
   const [enableAuto, setEnableAuto] = useState(false);
   const [autoInterval, setAutoInterval] = useState<"3h" | "10h" | "24h">("24h");
@@ -107,6 +113,26 @@ export function TradeConfirmationModal({
 
         {/* Body */}
         <div className="p-6 space-y-6">
+          {/* Stop-Loss Warning Banner */}
+          {isStopLoss && (
+            <div className="p-4 bg-loss/20 border-2 border-loss rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-loss" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="font-bold text-loss">STOP-LOSS TRIGGERED</span>
+              </div>
+              <p className="text-sm text-loss">
+                This position has dropped <span className="font-bold">{Math.abs(positionLossPct || 0).toFixed(1)}%</span>,
+                exceeding your stop-loss limit of <span className="font-bold">{stopLossPct}%</span>.
+                Selling now to limit further losses.
+              </p>
+              <p className="text-xs text-loss/70 mt-2">
+                No credits used - this is automatic risk management.
+              </p>
+            </div>
+          )}
+
           {/* Trade Details */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">

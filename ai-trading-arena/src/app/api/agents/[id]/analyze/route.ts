@@ -10,7 +10,7 @@ import {
 } from "@/lib/claude/prompts";
 import { getMarketNews, getMockNews } from "@/lib/finnhub/client";
 import { getPerplexityMarketNews, getMockPerplexityNews } from "@/lib/perplexity/client";
-import { getPortfolioSummary, getTickerPrice } from "@/lib/portfolio/helpers";
+import { getPortfolioSummary, getTickerPrice, checkStopLoss } from "@/lib/portfolio/helpers";
 import type {
   Agent,
   RiskParams,
@@ -203,6 +203,49 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Fetch portfolio with real positions and current prices
     const portfolio = await getPortfolioSummary(agent);
+
+    // Check for stop-loss triggered positions BEFORE running AI analysis
+    // This saves credits by returning forced SELL immediately
+    const stopLossPosition = checkStopLoss(portfolio.positions, riskParams.stop_loss_pct);
+    if (stopLossPosition) {
+      // Stop-loss triggered! Force SELL without AI analysis (saves credits)
+      const suggestion: TradeSuggestion = {
+        action: "SELL",
+        ticker: stopLossPosition.ticker,
+        quantity: stopLossPosition.quantity,
+        current_price: stopLossPosition.current_price,
+        total_cost: stopLossPosition.current_value,
+        reasoning: `STOP-LOSS TRIGGERED: ${stopLossPosition.ticker} has dropped ${Math.abs(stopLossPosition.unrealized_pnl_pct).toFixed(1)}%, exceeding your ${riskParams.stop_loss_pct}% stop-loss threshold. Automatic sell recommended to limit losses. Current loss: $${Math.abs(stopLossPosition.unrealized_pnl).toFixed(2)}.`,
+        confidence: 1.0, // High confidence for stop-loss
+      };
+
+      const response: AnalysisResponse = {
+        suggestion,
+        portfolio,
+      };
+
+      // Note: We do NOT deduct credits for stop-loss triggered recommendations
+      // as this is a risk management feature, not an AI analysis
+
+      return NextResponse.json({
+        success: true,
+        data: response,
+        meta: {
+          news_summary: "Stop-loss triggered - automatic risk management",
+          risk_assessment: "High",
+          api_cost: 0,
+          input_tokens: 0,
+          output_tokens: 0,
+          credits_remaining: userProfile.credits_remaining, // Credits NOT deducted
+          news_source: "stop-loss",
+          news_count: 0,
+          is_cached: false,
+          is_stop_loss: true,
+          stop_loss_pct: riskParams.stop_loss_pct,
+          position_loss_pct: stopLossPosition.unrealized_pnl_pct,
+        },
+      });
+    }
 
     // Determine preferred news source from agent config
     const agentNewsSources = (agent.news_sources as string[]) || ["finnhub"];

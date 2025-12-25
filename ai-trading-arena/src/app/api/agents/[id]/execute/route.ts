@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getPortfolioSummary, getTickerPrice, canSellShares } from "@/lib/portfolio/helpers";
+import { getPortfolioSummary, getTickerPrice, canSellShares, validateMaxPositionSize } from "@/lib/portfolio/helpers";
 import type {
   Agent,
   User,
@@ -11,6 +11,7 @@ import type {
   PositionRow,
   Trade,
   PortfolioSnapshotInsert,
+  RiskParams,
 } from "@/types/database";
 import type { PostgrestError } from "@supabase/supabase-js";
 
@@ -129,6 +130,36 @@ export async function POST(request: Request, { params }: RouteContext) {
             error: {
               code: "INSUFFICIENT_FUNDS",
               message: `Insufficient cash. Need $${totalCost.toFixed(2)}, have $${agent.cash_balance.toFixed(2)}`,
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check max position size limit
+      const riskParams = agent.risk_params as RiskParams;
+      const portfolio = await getPortfolioSummary(agent);
+
+      // Find existing position value for this ticker
+      const existingPosition = portfolio.positions.find(
+        (p) => p.ticker === ticker.toUpperCase()
+      );
+      const existingPositionValue = existingPosition?.current_value || 0;
+
+      const positionCheck = validateMaxPositionSize(
+        portfolio.total_value,
+        totalCost,
+        existingPositionValue,
+        riskParams.max_position_pct
+      );
+
+      if (!positionCheck.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "MAX_POSITION_EXCEEDED",
+              message: `This order would exceed your max position size of ${riskParams.max_position_pct}%. Current: ${positionCheck.currentPct.toFixed(1)}%. Max additional: $${positionCheck.maxAllowed.toFixed(2)}`,
             },
           },
           { status: 400 }
