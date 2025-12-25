@@ -69,6 +69,21 @@ export function AgentCreatorForm() {
   const [strategySource, setStrategySource] = useState<StrategySource>("manual");
   const [extractedStrategy, setExtractedStrategy] = useState<ExtractedStrategy | null>(null);
 
+  const [showDescriptionSuggestions, setShowDescriptionSuggestions] = useState(false);
+
+  const descriptionSuggestions = [
+    // Normal strategies
+    "Momentum strategy targeting tech sector breakouts with volume confirmation",
+    "Value investing approach focused on undervalued dividend-paying stocks",
+    "News-driven trading using real-time sentiment analysis",
+    // Funky/unusual strategies
+    "Contrarian plays based on extreme social media pessimism - buy when Twitter is crying",
+    "Full moon trading strategy - because markets are just as irrational as werewolves",
+    "Buy stocks with funny ticker symbols (LOL, YOLO, MOON) - meme energy = gains",
+    "Inverse Cramer strategy - do the exact opposite of what Jim Cramer says",
+    "CEO hair analysis - more hair = more bullish, Bezos was the exception",
+  ];
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
@@ -80,7 +95,7 @@ export function AgentCreatorForm() {
       max_position_pct: 25,
       max_trades_per_day: 3,
     },
-    is_public: false,
+    is_public: true,
     auto_execute: false,
     auto_interval: "24h",
   });
@@ -225,6 +240,45 @@ export function AgentCreatorForm() {
               className="w-full px-4 py-3 bg-surface-elevated border border-border rounded-lg text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none transition-colors resize-none"
               maxLength={200}
             />
+
+            {/* Suggestions Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowDescriptionSuggestions(!showDescriptionSuggestions)}
+              className="mt-2 text-sm text-secondary hover:text-secondary-muted transition-colors flex items-center gap-1"
+            >
+              <svg className={`w-4 h-4 transition-transform ${showDescriptionSuggestions ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              {showDescriptionSuggestions ? 'Hide suggestions' : 'Show suggestions'}
+            </button>
+
+            {/* Suggestions List */}
+            {showDescriptionSuggestions && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-text-tertiary font-medium uppercase tracking-wide">Click to use:</p>
+                <div className="grid gap-2">
+                  {descriptionSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, description: suggestion }));
+                        setShowDescriptionSuggestions(false);
+                      }}
+                      className={`text-left px-3 py-2 text-sm rounded-lg border transition-colors hover:border-primary hover:bg-primary/5 ${
+                        index < 3
+                          ? 'border-border text-text-secondary'
+                          : 'border-warning/30 bg-warning/5 text-text-secondary'
+                      }`}
+                    >
+                      {index >= 3 && <span className="text-warning mr-1">🔥</span>}
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* LLM Model */}
@@ -276,8 +330,8 @@ export function AgentCreatorForm() {
               }`}
             >
               <span
-                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                  formData.is_public ? "translate-x-7" : "translate-x-1"
+                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                  formData.is_public ? "translate-x-6" : "translate-x-0"
                 }`}
               />
             </button>
@@ -650,8 +704,8 @@ export function AgentCreatorForm() {
               }`}
             >
               <span
-                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                  formData.auto_execute ? "translate-x-7" : "translate-x-1"
+                className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                  formData.auto_execute ? "translate-x-6" : "translate-x-0"
                 }`}
               />
             </button>

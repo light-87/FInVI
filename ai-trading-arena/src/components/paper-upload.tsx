@@ -271,6 +271,13 @@ export function PaperUpload({ onStrategyExtracted, onError }: PaperUploadProps) 
         )}
       </div>
 
+      {/* Search hint for finding papers */}
+      {!extractedText && !isLoading && (
+        <p className="text-xs text-text-tertiary text-center">
+          💡 Need papers? Try searching: <span className="text-secondary font-medium">&quot;investing stock selection strategies 2025 PDF&quot;</span>
+        </p>
+      )}
+
       {/* Actions when file is uploaded */}
       {extractedText && !isLoading && (
         <div className="space-y-3">
