@@ -15,9 +15,19 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "AI Trading Arena",
-  description: "The Kaggle for Financial AI Agents - Create AI trading agents with natural language, no coding required",
-  keywords: ["AI", "trading", "agents", "finance", "machine learning", "natural language"],
+  title: "Vivy – Turn Your Trading Ideas Into AI Agents",
+  description: "The first platform for Vibe Investing. Describe your strategy in plain English or upload a research paper. Vivy builds, tests, and runs it for you.",
+  keywords: ["AI trading", "vibe investing", "trading agents", "no-code trading", "algorithmic trading", "paper trading", "AI finance"],
+  openGraph: {
+    title: "Vivy – Turn Your Trading Ideas Into AI Agents",
+    description: "After Vibe Coding comes Vibe Investing. Create AI trading agents with plain English. No code required.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vivy – Turn Your Trading Ideas Into AI Agents",
+    description: "After Vibe Coding comes Vibe Investing. Create AI trading agents with plain English.",
+  },
 };
 
 export default function RootLayout({
