@@ -53,19 +53,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's credits to check if they have enough
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("credits")
+    const { data: userProfile } = await supabase
+      .from("users")
+      .select("credits_remaining")
       .eq("id", user.id)
       .single();
 
-    const credits = profile?.credits ?? 10; // Default 10 credits for new users
+    const credits = userProfile?.credits_remaining ?? 50; // Default 50 credits for new users
+    const extractionCost = 20; // Paper extraction costs 20 credits
 
-    // Estimate cost (roughly $0.01-0.05 per extraction)
-    const estimatedCost = model === "claude-opus" ? 0.05 : 0.02;
-    if (credits < estimatedCost) {
+    if (credits < extractionCost) {
       return NextResponse.json(
-        { error: { message: "Insufficient credits for strategy extraction" } },
+        { error: { message: `Insufficient credits. You need ${extractionCost} credits but only have ${credits}.` } },
         { status: 402 }
       );
     }
@@ -73,16 +72,16 @@ export async function POST(request: NextRequest) {
     // Extract strategy from paper
     const { strategy, cost } = await extractStrategyFromPaper(paper_text, model);
 
-    // Deduct credits
+    // Deduct credits (20 credits for paper extraction)
     await supabase
-      .from("profiles")
-      .update({ credits: credits - cost })
+      .from("users")
+      .update({ credits_remaining: credits - extractionCost })
       .eq("id", user.id);
 
     return NextResponse.json({
       data: {
         strategy,
-        cost,
+        credits_used: extractionCost,
       },
     });
   } catch (error) {

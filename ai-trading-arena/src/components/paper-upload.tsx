@@ -324,7 +324,7 @@ export function PaperUpload({ onStrategyExtracted, onError }: PaperUploadProps) 
           </div>
 
           <p className="text-xs text-text-tertiary text-center">
-            This will use AI credits to analyze the paper (~$0.02)
+            This will use 20 credits to analyze the paper
           </p>
         </div>
       )}
