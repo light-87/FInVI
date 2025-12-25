@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { PaperUpload } from "@/components/paper-upload";
 
 const LLM_MODELS = [
   { value: "claude-sonnet", label: "Claude Sonnet", cost: "$0.003/1K tokens" },
@@ -49,10 +50,24 @@ interface FormData {
   auto_interval: "3h" | "10h" | "24h";
 }
 
+interface ExtractedStrategy {
+  name: string;
+  description: string;
+  strategy_prompt: string;
+  key_indicators: string[];
+  risk_level: "Low" | "Medium" | "High";
+  suggested_tickers: string[];
+  paper_summary: string;
+}
+
+type StrategySource = "manual" | "paper";
+
 export function AgentCreatorForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [strategySource, setStrategySource] = useState<StrategySource>("manual");
+  const [extractedStrategy, setExtractedStrategy] = useState<ExtractedStrategy | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -122,6 +137,29 @@ export function AgentCreatorForm() {
       news_sources: prev.news_sources.includes(sourceId)
         ? prev.news_sources.filter((s) => s !== sourceId)
         : [...prev.news_sources, sourceId],
+    }));
+  };
+
+  const handleStrategyExtracted = (strategy: ExtractedStrategy) => {
+    setExtractedStrategy(strategy);
+    setFormData((prev) => ({
+      ...prev,
+      name: strategy.name || prev.name,
+      description: strategy.description || prev.description,
+      system_prompt: strategy.strategy_prompt,
+    }));
+    setError(null);
+  };
+
+  const handlePaperError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
+
+  const clearExtractedStrategy = () => {
+    setExtractedStrategy(null);
+    setFormData((prev) => ({
+      ...prev,
+      system_prompt: DEFAULT_SYSTEM_PROMPT,
     }));
   };
 
@@ -247,41 +285,171 @@ export function AgentCreatorForm() {
         </div>
       </section>
 
-      {/* System Prompt Section */}
+      {/* Strategy Source Section */}
       <section className="bg-surface border border-border rounded-lg p-6">
         <h2 className="text-lg font-semibold text-text-primary mb-2">
-          System Prompt
+          Trading Strategy
         </h2>
         <p className="text-sm text-text-tertiary mb-4">
-          Define your agent&apos;s personality and trading strategy. This is
-          the instruction that guides all trading decisions.
+          Define your agent&apos;s trading strategy. Write it manually or upload a research paper to extract a strategy automatically.
         </p>
 
-        <textarea
-          id="system_prompt"
-          value={formData.system_prompt}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, system_prompt: e.target.value }))
-          }
-          rows={12}
-          className="w-full px-4 py-3 bg-surface-elevated border border-border rounded-lg text-text-primary font-mono text-sm placeholder:text-text-tertiary focus:border-primary focus:outline-none transition-colors resize-none"
-        />
-        <div className="flex justify-between mt-2">
-          <p className="text-xs text-text-tertiary">
-            {formData.system_prompt.length} characters
-          </p>
+        {/* Strategy Source Toggle */}
+        <div className="flex gap-2 mb-6">
           <button
             type="button"
-            onClick={() =>
-              setFormData((prev) => ({
-                ...prev,
-                system_prompt: DEFAULT_SYSTEM_PROMPT,
-              }))
-            }
-            className="text-xs text-secondary hover:text-secondary-muted transition-colors"
+            onClick={() => setStrategySource("manual")}
+            className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              strategySource === "manual"
+                ? "bg-primary text-background"
+                : "bg-surface-elevated border border-border text-text-secondary hover:text-text-primary"
+            }`}
           >
-            Reset to default
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Write Manually
+            </div>
           </button>
+          <button
+            type="button"
+            onClick={() => setStrategySource("paper")}
+            className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              strategySource === "paper"
+                ? "bg-primary text-background"
+                : "bg-surface-elevated border border-border text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Upload Paper
+            </div>
+          </button>
+        </div>
+
+        {/* Paper Upload */}
+        {strategySource === "paper" && (
+          <div className="mb-6">
+            <PaperUpload
+              onStrategyExtracted={handleStrategyExtracted}
+              onError={handlePaperError}
+            />
+
+            {/* Extracted Strategy Info */}
+            {extractedStrategy && (
+              <div className="mt-4 p-4 bg-profit/10 border border-profit/20 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-profit flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Strategy Extracted Successfully
+                    </h3>
+                    <p className="text-sm text-text-secondary mt-1">
+                      {extractedStrategy.paper_summary}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearExtractedStrategy}
+                    className="text-text-tertiary hover:text-text-secondary"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Key Indicators */}
+                {extractedStrategy.key_indicators.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs text-text-tertiary mb-1">Key Indicators:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {extractedStrategy.key_indicators.slice(0, 5).map((indicator, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-surface rounded text-xs text-text-secondary"
+                        >
+                          {indicator}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested Tickers */}
+                {extractedStrategy.suggested_tickers.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs text-text-tertiary mb-1">Suggested Tickers:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {extractedStrategy.suggested_tickers.map((ticker, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-primary/20 rounded text-xs text-primary font-mono"
+                        >
+                          {ticker}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Risk Level */}
+                <div className="mt-3 flex items-center gap-2">
+                  <p className="text-xs text-text-tertiary">Risk Level:</p>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-medium ${
+                      extractedStrategy.risk_level === "Low"
+                        ? "bg-profit/20 text-profit"
+                        : extractedStrategy.risk_level === "Medium"
+                        ? "bg-warning/20 text-warning"
+                        : "bg-loss/20 text-loss"
+                    }`}
+                  >
+                    {extractedStrategy.risk_level}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* System Prompt (always shown, editable) */}
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-2">
+            System Prompt {extractedStrategy && "(auto-filled from paper)"}
+          </label>
+          <textarea
+            id="system_prompt"
+            value={formData.system_prompt}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, system_prompt: e.target.value }))
+            }
+            rows={12}
+            className="w-full px-4 py-3 bg-surface-elevated border border-border rounded-lg text-text-primary font-mono text-sm placeholder:text-text-tertiary focus:border-primary focus:outline-none transition-colors resize-none"
+          />
+          <div className="flex justify-between mt-2">
+            <p className="text-xs text-text-tertiary">
+              {formData.system_prompt.length} characters
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData((prev) => ({
+                  ...prev,
+                  system_prompt: DEFAULT_SYSTEM_PROMPT,
+                }));
+                setExtractedStrategy(null);
+              }}
+              className="text-xs text-secondary hover:text-secondary-muted transition-colors"
+            >
+              Reset to default
+            </button>
+          </div>
         </div>
       </section>
 
