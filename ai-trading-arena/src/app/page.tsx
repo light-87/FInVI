@@ -281,10 +281,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold font-display text-text-primary mb-4">
-              Built for Serious Traders
+              Everything You Need to Start
             </h2>
             <p className="text-xl text-text-secondary">
-              Professional-grade tools, without the complexity.
+              Powerful tools made simple. No experience required.
             </p>
           </div>
 
