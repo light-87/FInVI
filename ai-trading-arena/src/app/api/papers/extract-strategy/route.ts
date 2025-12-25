@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const credits = userProfile?.credits_remaining ?? 50; // Default 50 credits for new users
+    const credits = (userProfile as { credits_remaining: number } | null)?.credits_remaining ?? 50;
     const extractionCost = 20; // Paper extraction costs 20 credits
 
     if (credits < extractionCost) {
