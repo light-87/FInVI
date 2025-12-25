@@ -184,6 +184,35 @@ ${item.summary}`;
 }
 
 /**
+ * Build context about a previous recommendation to help AI avoid duplicates
+ */
+export function buildPreviousRecommendationContext(
+  prevRecommendation: {
+    action: string;
+    ticker: string;
+    quantity: number;
+    reasoning: string;
+    created_at: string;
+  }
+): string {
+  const timeAgo = Math.round(
+    (Date.now() - new Date(prevRecommendation.created_at).getTime()) / 60000
+  );
+
+  return `
+=== PREVIOUS RECOMMENDATION (${timeAgo} minutes ago) ===
+You previously suggested: ${prevRecommendation.action} ${prevRecommendation.quantity} shares of ${prevRecommendation.ticker}
+Reasoning: "${prevRecommendation.reasoning}"
+
+The user is requesting a FRESH analysis. Consider:
+1. Has anything changed in the news or market that warrants a different recommendation?
+2. Are there other opportunities you may have overlooked?
+3. If conditions truly haven't changed, you may suggest the same action, but provide updated reasoning.
+==============================================
+`;
+}
+
+/**
  * Parse Claude's response into a structured trade decision
  */
 export interface TradeDecision {

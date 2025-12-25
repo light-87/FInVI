@@ -29,9 +29,11 @@ interface AnalysisMeta {
 interface RunAnalysisProps {
   agentId: string;
   isActive: boolean;
+  autoExecute?: boolean;
+  autoInterval?: "3h" | "10h" | "24h";
 }
 
-export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
+export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterval = "24h" }: RunAnalysisProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -39,6 +41,39 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const executeTradeAutomatically = async (suggestion: TradeSuggestion) => {
+    try {
+      const res = await fetch(`/api/agents/${agentId}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: suggestion.action,
+          ticker: suggestion.ticker,
+          quantity: suggestion.quantity,
+          price: suggestion.current_price,
+          enable_auto: true,
+          auto_interval: autoInterval,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Trade execution failed");
+      }
+
+      setSuccessMessage(
+        `Auto-executed: ${suggestion.action} ${suggestion.quantity} ${suggestion.ticker} @ $${suggestion.current_price.toFixed(2)}`
+      );
+
+      // Dispatch event to notify portfolio section to refresh
+      window.dispatchEvent(new CustomEvent("trade-executed"));
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Auto-execution failed");
+    }
+  };
 
   const handleRunAnalysis = async (forceRefresh = false) => {
     setIsLoading(true);
@@ -68,6 +103,9 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
           ? ` (cached ${data.meta.cache_age_minutes}m ago)`
           : "";
         setSuccessMessage(`AI recommends: HOLD - No trade suggested${cacheNote}`);
+      } else if (autoExecute) {
+        // Auto-execute enabled - execute BUY or SELL immediately without confirmation
+        await executeTradeAutomatically(data.data.suggestion);
       } else {
         // Show confirmation modal for BUY/SELL
         setShowConfirmation(true);

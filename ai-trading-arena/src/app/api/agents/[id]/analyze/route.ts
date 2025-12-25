@@ -5,6 +5,7 @@ import {
   buildSystemPrompt,
   buildRealPortfolioContext,
   buildNewsContext,
+  buildPreviousRecommendationContext,
   parseTradeDecision,
 } from "@/lib/claude/prompts";
 import { getMarketNews, getMockNews } from "@/lib/finnhub/client";
@@ -253,8 +254,30 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Build context for Claude
     const systemPrompt = buildSystemPrompt(agent.name, agent.system_prompt, riskParams);
-    const portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital);
+    let portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital);
     const newsContext = buildNewsContext(news);
+
+    // If force refresh, fetch and add context about the previous recommendation
+    if (forceRefresh) {
+      const { data: prevRecommendation } = (await supabase
+        .from("agent_recommendations")
+        .select("*")
+        .eq("agent_id", agentId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()) as { data: AgentRecommendation | null };
+
+      if (prevRecommendation) {
+        const prevContext = buildPreviousRecommendationContext({
+          action: prevRecommendation.action,
+          ticker: prevRecommendation.ticker,
+          quantity: prevRecommendation.quantity,
+          reasoning: prevRecommendation.reasoning,
+          created_at: prevRecommendation.created_at,
+        });
+        portfolioContext = portfolioContext + "\n" + prevContext;
+      }
+    }
 
     // Determine which model to use
     const claudeModel: ClaudeModel =
@@ -333,11 +356,11 @@ export async function POST(request: Request, { params }: RouteContext) {
       expires_at: expiresAt,
     };
 
-    const { data: savedRecommendation, error: recommendationError } = await supabase
+    const { data: savedRecommendation, error: recommendationError } = (await supabase
       .from("agent_recommendations")
       .insert(recommendationData as never)
       .select()
-      .single();
+      .single()) as { data: AgentRecommendation | null; error: unknown };
 
     if (recommendationError) {
       console.error("Error saving recommendation:", recommendationError);
