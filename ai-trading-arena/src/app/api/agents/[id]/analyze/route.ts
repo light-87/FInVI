@@ -8,8 +8,11 @@ import {
   parseTradeDecision,
 } from "@/lib/claude/prompts";
 import { getMarketNews, getMockNews } from "@/lib/finnhub/client";
+import { getPerplexityMarketNews, getMockPerplexityNews } from "@/lib/perplexity/client";
 import { getPortfolioSummary, getTickerPrice } from "@/lib/portfolio/helpers";
-import type { Agent, RiskParams, User, TradeSuggestion, AnalysisResponse } from "@/types/database";
+import type { Agent, RiskParams, User, TradeSuggestion, AnalysisResponse, PositionWithPnL } from "@/types/database";
+
+type NewsSource = "finnhub" | "perplexity";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -118,21 +121,52 @@ export async function POST(request: Request, { params }: RouteContext) {
     // Fetch portfolio with real positions and current prices
     const portfolio = await getPortfolioSummary(agent);
 
-    // Fetch news (use mock if no API key)
+    // Determine preferred news source from agent config
+    const agentNewsSources = (agent.news_sources as string[]) || ["finnhub"];
+    const preferredSource: NewsSource = agentNewsSources.includes("perplexity")
+      ? "perplexity"
+      : "finnhub";
+
+    // Extract tickers from current positions for targeted news search
+    const portfolioTickers = portfolio.positions.map((p: PositionWithPnL) => p.ticker);
+
+    // Fetch news based on preferred source
     let news;
     let newsSource = "mock";
-    if (process.env.FINNHUB_API_KEY) {
-      news = await getMarketNews("general");
-      if (news.length > 0) {
-        newsSource = "finnhub";
-        console.log(`[Analyze] Using Finnhub news: ${news.length} items`);
+
+    if (preferredSource === "perplexity") {
+      // Use Perplexity for AI-powered news search tailored to agent's focus
+      if (process.env.PERPLEXITY_API_KEY) {
+        news = await getPerplexityMarketNews({
+          agentDescription: agent.description || undefined,
+          tickers: portfolioTickers.length > 0 ? portfolioTickers : undefined,
+        });
+        if (news.length > 0) {
+          newsSource = "perplexity";
+          console.log(`[Analyze] Using Perplexity news: ${news.length} items (description: "${agent.description?.slice(0, 50)}...")`);
+        } else {
+          news = getMockPerplexityNews();
+          console.log("[Analyze] Perplexity returned no news, using mock data");
+        }
       } else {
-        news = getMockNews();
-        console.log("[Analyze] Finnhub returned no news, using mock data");
+        news = getMockPerplexityNews();
+        console.log("[Analyze] No PERPLEXITY_API_KEY, using mock Perplexity news");
       }
     } else {
-      news = getMockNews();
-      console.log("[Analyze] No FINNHUB_API_KEY, using mock news");
+      // Use Finnhub for traditional news feed
+      if (process.env.FINNHUB_API_KEY) {
+        news = await getMarketNews("general");
+        if (news.length > 0) {
+          newsSource = "finnhub";
+          console.log(`[Analyze] Using Finnhub news: ${news.length} items`);
+        } else {
+          news = getMockNews();
+          console.log("[Analyze] Finnhub returned no news, using mock data");
+        }
+      } else {
+        news = getMockNews();
+        console.log("[Analyze] No FINNHUB_API_KEY, using mock news");
+      }
     }
 
     // Build context for Claude

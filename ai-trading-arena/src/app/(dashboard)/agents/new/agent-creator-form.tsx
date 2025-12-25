@@ -13,10 +13,10 @@ const LLM_MODELS = [
 ] as const;
 
 const NEWS_SOURCES = [
-  { id: "finnhub", label: "Finnhub", description: "General market news" },
-  { id: "sec_filings", label: "SEC Filings", description: "Official company filings" },
-  { id: "earnings", label: "Earnings Reports", description: "Quarterly earnings data" },
-  { id: "social", label: "Social Sentiment", description: "Twitter/Reddit sentiment" },
+  { id: "finnhub", label: "Finnhub", description: "General market news feed" },
+  { id: "perplexity", label: "Perplexity AI", description: "AI-powered real-time news search" },
+  { id: "sec_filings", label: "SEC Filings", description: "Official company filings (coming soon)" },
+  { id: "earnings", label: "Earnings Reports", description: "Quarterly earnings data (coming soon)" },
 ] as const;
 
 const DEFAULT_SYSTEM_PROMPT = `You are an AI trading agent analyzing market news and data.
