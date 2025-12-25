@@ -113,11 +113,11 @@ ai-trading-arena/
 │   │   │   └── types.ts         # Database types
 │   │   ├── claude/
 │   │   │   ├── client.ts        # Claude API wrapper
-│   │   │   └── prompts.ts       # Prompt templates (includes portfolio context)
+│   │   │   └── prompts.ts       # Prompt templates (includes portfolio context + prev recommendation)
 │   │   ├── finnhub/
 │   │   │   └── client.ts        # News API wrapper
 │   │   ├── portfolio/           # ✅ NEW
-│   │   │   └── helpers.ts       # Portfolio management functions
+│   │   │   └── helpers.ts       # Portfolio mgmt + checkStopLoss + validateMaxPositionSize
 │   │   └── utils/
 │   │       ├── format.ts        # Formatters (currency, dates)
 │   │       └── calculations.ts  # Financial calculations
@@ -486,7 +486,25 @@ FINNHUB_API_KEY=...
    - realized_pnl (decimal, nullable)
    - created_at
 
-5. **portfolio_snapshots**
+5. **agent_recommendations** ✅ NEW (caches AI recommendations)
+   - id (uuid)
+   - agent_id (uuid, FK to agents)
+   - action ('BUY' | 'SELL' | 'HOLD')
+   - ticker (varchar)
+   - quantity (integer)
+   - confidence (float)
+   - reasoning (text)
+   - news_summary (text)
+   - risk_assessment ('Low' | 'Medium' | 'High')
+   - current_price (decimal)
+   - total_cost (decimal)
+   - is_executed (boolean, default false)
+   - executed_at (timestamp, nullable)
+   - expires_at (timestamp) - 1 hour cache expiry
+   - is_stop_loss (boolean, default false)
+   - created_at
+
+6. **portfolio_snapshots**
    - id (uuid)
    - agent_id (uuid, FK to agents)
    - timestamp
@@ -513,6 +531,7 @@ Place in `/sql` folder:
 3. `03_functions.sql` - Database functions (calculate returns, update leaderboard)
 4. `04_seed.sql` - Demo data for testing
 5. `05_positions.sql` - Positions table + agent columns for real trading ✅ NEW
+6. `06_recommendations.sql` - Recommendation caching with 1-hour expiry ✅ NEW
 
 ### Running Migrations
 
@@ -618,9 +637,37 @@ Or create a script that uses Supabase's JS client to run SQL.
 - [x] Add auto-trading settings to agent creation
 - [x] Fix portfolio auto-refresh (custom events)
 
-### Phase 3: Competition & Polish (Days 11-14)
+### Phase 2.75: Risk Management & Recommendation Caching (Day 11) ✅ COMPLETE
 
-**Day 11: Landing Page**
+**Day 11: Recommendation Caching & Risk Enforcement** ✅
+- [x] Create recommendation caching system (sql/06_recommendations.sql)
+  - 1-hour cache expiry
+  - Prevents duplicate recommendations
+  - Marks executed recommendations
+- [x] Add force refresh with previous recommendation context
+  - Passes previous recommendation to AI when force refreshing
+  - Helps AI suggest different stocks/actions
+- [x] Implement automatic stop-loss enforcement
+  - checkStopLoss() helper function
+  - Checks BEFORE AI analysis (saves credits)
+  - Forces SELL for positions exceeding stop-loss threshold
+- [x] Add max position size validation
+  - validateMaxPositionSize() helper function
+  - Enforced on BUY orders in execute endpoint
+  - Returns clear error if limit exceeded
+- [x] Update AI prompt for HOLD clarification
+  - HOLD only for owned positions
+  - Priority checklist (stop-loss → sell deteriorated → buy → hold)
+- [x] Add auto-execute for both BUY and SELL trades
+  - executeTradeAutomatically() in run-analysis.tsx
+- [x] Add manual sell button on portfolio positions
+  - PositionCard with sell modal
+  - Quantity selector with P&L preview
+- [x] Add stop-loss warning banner in trade confirmation modal
+
+### Phase 3: Competition & Polish (Days 12-14)
+
+**Day 12: Landing Page**
 - [ ] Hero section with value prop
 - [ ] How it works section
 - [ ] Features/benefits grid
@@ -628,23 +675,19 @@ Or create a script that uses Supabase's JS client to run SQL.
 - [ ] Cost transparency section
 - [ ] CTA to signup
 
-**Day 12: Pitch Dashboard**
+**Day 13: Pitch Dashboard & Polish**
 - [ ] Generate mock data (50+ agents)
 - [ ] Build `/pitch` static page
 - [ ] Create impressive charts with mock data
 - [ ] Add example reasoning logs
 - [ ] Ensure no API dependencies
-
-**Day 13: Polish & Testing**
-- [ ] Add loading states
-- [ ] Implement skeleton screens
+- [ ] Add loading states and skeleton screens
 - [ ] Test complete user flow
-- [ ] Test edge cases
-- [ ] Fix bugs found
 
 **Day 14: Deploy & Document**
 - [ ] Final deployment
 - [ ] Create demo accounts
+- [ ] Test edge cases and fix bugs
 - [ ] Record demo video (optional)
 - [ ] Update all documentation
 - [ ] Prepare for submission
