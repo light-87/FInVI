@@ -38,10 +38,10 @@ BEGIN
     UPDATE public.users
     SET
         credits_remaining = CASE
-            WHEN tier = 'free' THEN 10
-            WHEN tier = 'pro' THEN 100
+            WHEN tier = 'free' THEN 50
+            WHEN tier = 'pro' THEN 200
             WHEN tier = 'enterprise' THEN 1000
-            ELSE 10
+            ELSE 50
         END,
         credits_reset_at = NOW() + INTERVAL '1 day'
     WHERE id = user_uuid
