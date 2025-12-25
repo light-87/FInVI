@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Deduct credits (20 credits for paper extraction)
     await supabase
       .from("users")
-      .update({ credits_remaining: credits - extractionCost })
+      .update({ credits_remaining: credits - extractionCost } as never)
       .eq("id", user.id);
 
     return NextResponse.json({
