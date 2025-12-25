@@ -1,7 +1,7 @@
 import { AgentCreatorForm } from "./agent-creator-form";
 
 export const metadata = {
-  title: "Create Agent | AI Trading Arena",
+  title: "Create Agent | Vivy",
   description: "Create a new AI trading agent",
 };
 

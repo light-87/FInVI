@@ -8,7 +8,7 @@ export function buildSystemPrompt(
   customPrompt: string,
   riskParams: RiskParams
 ): string {
-  return `You are "${agentName}", an AI trading agent competing in the AI Trading Arena.
+  return `You are "${agentName}", an AI trading agent competing in Vivy.
 
 ## Your Core Strategy
 ${customPrompt}

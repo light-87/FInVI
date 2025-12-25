@@ -2,8 +2,8 @@ import Link from "next/link";
 import { SignupForm } from "./signup-form";
 
 export const metadata = {
-  title: "Sign Up | AI Trading Arena",
-  description: "Create your AI Trading Arena account",
+  title: "Sign Up | Vivy",
+  description: "Create your Vivy account",
 };
 
 export default function SignupPage() {
@@ -13,7 +13,7 @@ export default function SignupPage() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold font-display text-text-primary mb-2">
-            AI Trading <span className="text-primary">Arena</span>
+            <span className="text-primary">Vivy</span>
           </h1>
           <p className="text-text-secondary">
             Create AI trading agents with natural language

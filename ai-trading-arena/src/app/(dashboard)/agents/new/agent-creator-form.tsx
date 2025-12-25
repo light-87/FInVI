@@ -89,7 +89,7 @@ export function AgentCreatorForm() {
     description: "",
     llm_model: "claude-sonnet",
     system_prompt: DEFAULT_SYSTEM_PROMPT,
-    news_sources: ["finnhub"],
+    news_sources: ["perplexity"],
     risk_params: {
       stop_loss_pct: 5,
       max_position_pct: 25,
