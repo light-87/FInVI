@@ -37,11 +37,23 @@ You MUST respond with valid JSON in exactly this format:
 2. "ticker" should be a valid US stock symbol (e.g., AAPL, MSFT, GOOGL)
 3. "quantity" is the number of shares to buy or sell (must be a positive integer)
 4. "confidence" should reflect how certain you are (0.5 = uncertain, 0.9 = very confident)
-5. If no clear opportunity exists, choose "HOLD" with appropriate reasoning
-6. Consider your risk parameters AND your available cash when making decisions
-7. For SELL actions, you can only sell shares you currently own
-8. For BUY actions, ensure total cost (quantity * price) doesn't exceed available cash
-9. Be specific in your reasoning - reference actual news and data
+5. Consider your risk parameters AND your available cash when making decisions
+6. For SELL actions, you can only sell shares you currently own
+7. For BUY actions, ensure total cost (quantity * price) doesn't exceed available cash
+8. Be specific in your reasoning - reference actual news and data
+
+## IMPORTANT: HOLD vs BUY/SELL Decision
+- Choose "HOLD" ONLY if you have open positions and want to keep them unchanged
+- For HOLD: set ticker to your MOST IMPORTANT current position (the one you're actively monitoring)
+- If you have NO positions and see no buying opportunity: still choose "HOLD" with ticker set to a stock you're watching
+- DO NOT recommend HOLD for stocks you don't own - that wastes analysis credits
+- If a position has dropped below your stop-loss (${riskParams.stop_loss_pct}%), you MUST recommend SELL
+
+## Priority Check (in order):
+1. SELL any position that has dropped ${riskParams.stop_loss_pct}% or more (stop-loss triggered)
+2. SELL any position where fundamentals have deteriorated
+3. BUY if there's a strong opportunity within your strategy and risk limits
+4. HOLD if current positions are performing well and no better opportunities exist
 
 ## Important
 - Your trades will be executed with REAL position tracking
@@ -181,6 +193,35 @@ Source: ${item.source} | ${date}
 ${item.summary}`;
     })
     .join("\n\n");
+}
+
+/**
+ * Build context about a previous recommendation to help AI avoid duplicates
+ */
+export function buildPreviousRecommendationContext(
+  prevRecommendation: {
+    action: string;
+    ticker: string;
+    quantity: number;
+    reasoning: string;
+    created_at: string;
+  }
+): string {
+  const timeAgo = Math.round(
+    (Date.now() - new Date(prevRecommendation.created_at).getTime()) / 60000
+  );
+
+  return `
+=== PREVIOUS RECOMMENDATION (${timeAgo} minutes ago) ===
+You previously suggested: ${prevRecommendation.action} ${prevRecommendation.quantity} shares of ${prevRecommendation.ticker}
+Reasoning: "${prevRecommendation.reasoning}"
+
+The user is requesting a FRESH analysis. Consider:
+1. Has anything changed in the news or market that warrants a different recommendation?
+2. Are there other opportunities you may have overlooked?
+3. If conditions truly haven't changed, you may suggest the same action, but provide updated reasoning.
+==============================================
+`;
 }
 
 /**

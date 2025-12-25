@@ -11,7 +11,7 @@
 | Week | Days Completed | Status |
 |------|----------------|--------|
 | Week 1 | 7/7 | ✅ Complete |
-| Week 2 | 3/7 | In Progress |
+| Week 2 | 4/7 | In Progress |
 
 ### Major Milestones
 - ✅ Project Setup & Supabase (Days 1-2)
@@ -20,6 +20,7 @@
 - ✅ Claude + Finnhub Integration (Day 5)
 - ✅ Dashboard & Trade Execution (Days 6-8)
 - ✅ Real Trading System with Positions (Days 9-10)
+- ✅ Recommendation Caching & Risk Enforcement (Day 11)
 
 ---
 
@@ -326,7 +327,61 @@
 
 ---
 
-### Day 11 - [DATE]
+### Day 11 - December 25, 2024
+
+**Focus:** Recommendation Caching & Risk Enforcement
+
+#### Completed
+- [x] Created recommendation caching system (sql/06_recommendations.sql)
+  - agent_recommendations table with 1-hour cache expiry
+  - Prevents duplicate recommendations (same input = cached output)
+  - Marks recommendations as executed after trade confirmation
+  - RLS policies for user data protection
+- [x] Added force refresh with previous recommendation context
+  - buildPreviousRecommendationContext() in prompts.ts
+  - When force refreshing, AI sees previous recommendation to suggest different actions
+- [x] Implemented automatic stop-loss enforcement
+  - checkStopLoss() helper function in portfolio/helpers.ts
+  - Checks BEFORE AI analysis (saves credits!)
+  - Forces SELL for positions exceeding stop-loss threshold
+  - No credits deducted for stop-loss triggered sells
+- [x] Added max position size validation
+  - validateMaxPositionSize() helper function
+  - Enforced on BUY orders in execute endpoint
+  - Returns clear error with current % and max allowed
+- [x] Updated AI prompt for HOLD clarification
+  - HOLD only makes sense for owned positions
+  - Priority checklist: stop-loss → sell deteriorated → buy → hold
+  - Prevents wasting credits on HOLD for random stocks
+- [x] Added auto-execute for both BUY and SELL trades
+  - executeTradeAutomatically() in run-analysis.tsx
+  - Works for both actions when auto-execute is enabled
+- [x] Added manual sell button on portfolio positions
+  - PositionCard component with Sell button
+  - Sell modal with quantity selector
+  - P&L preview before confirming sale
+- [x] Added stop-loss warning banner in trade confirmation modal
+  - Red warning banner for stop-loss triggered sells
+  - Shows position loss % vs stop-loss threshold
+  - Indicates no credits used for risk management
+
+#### Blockers
+- None
+
+#### Notes
+- Risk parameters are now ENFORCED, not just AI guidelines
+- Stop-loss checked before AI analysis = saves credits
+- Max position size checked at execution time
+- Recommendation caching reduces redundant API calls
+- Manual sell gives users more control over positions
+- Commits: 933978b, caac656, a9604ba
+
+#### Tomorrow
+- Landing page
+
+---
+
+### Day 12 - [DATE]
 
 **Focus:** Landing Page
 
@@ -339,54 +394,34 @@
 - [ ] CTA to signup
 
 #### Blockers
-- 
+-
 
 #### Notes
-- 
+-
 
 #### Tomorrow
-- Polish & animations
-
----
-
-### Day 12 - [DATE]
-
-**Focus:** Polish & Animations
-
-#### Completed
-- [ ] Added loading states
-- [ ] Implemented skeleton screens
-- [ ] Added micro-interactions
-- [ ] Tested responsive (basic)
-- [ ] Fixed visual bugs
-
-#### Blockers
-- 
-
-#### Notes
-- 
-
-#### Tomorrow
-- Testing & fixes
+- Pitch dashboard & polish
 
 ---
 
 ### Day 13 - [DATE]
 
-**Focus:** Testing & Fixes
+**Focus:** Pitch Dashboard & Polish
 
 #### Completed
+- [ ] Generated mock data (50+ agents)
+- [ ] Built `/pitch` static page
+- [ ] Created impressive charts with mock data
+- [ ] Added example reasoning logs
+- [ ] Ensured no API dependencies
+- [ ] Added loading states and skeleton screens
 - [ ] Tested complete user flow
-- [ ] Tested edge cases
-- [ ] Fixed bugs found
-- [ ] Performance check
-- [ ] Security review
 
 #### Blockers
-- 
+-
 
 #### Notes
-- 
+-
 
 #### Tomorrow
 - Final deploy
@@ -400,12 +435,13 @@
 #### Completed
 - [ ] Final deployment
 - [ ] Created demo accounts
+- [ ] Tested edge cases and fixed bugs
 - [ ] Recorded demo video (optional)
 - [ ] Updated all documentation
 - [ ] Prepared for submission
 
 #### Final Status
-- 
+-
 
 #### Lessons Learned
 - 

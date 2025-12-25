@@ -5,12 +5,25 @@ import {
   buildSystemPrompt,
   buildRealPortfolioContext,
   buildNewsContext,
+  buildPreviousRecommendationContext,
   parseTradeDecision,
 } from "@/lib/claude/prompts";
 import { getMarketNews, getMockNews } from "@/lib/finnhub/client";
 import { getPerplexityMarketNews, getMockPerplexityNews } from "@/lib/perplexity/client";
-import { getPortfolioSummary, getTickerPrice } from "@/lib/portfolio/helpers";
-import type { Agent, RiskParams, User, TradeSuggestion, AnalysisResponse, PositionWithPnL } from "@/types/database";
+import { getPortfolioSummary, getTickerPrice, checkStopLoss } from "@/lib/portfolio/helpers";
+import type {
+  Agent,
+  RiskParams,
+  User,
+  TradeSuggestion,
+  AnalysisResponse,
+  PositionWithPnL,
+  AgentRecommendation,
+  AgentRecommendationInsert,
+} from "@/types/database";
+
+// Cache duration in hours (recommendations expire after this time)
+const RECOMMENDATION_CACHE_HOURS = 1;
 
 type NewsSource = "finnhub" | "perplexity";
 
@@ -23,11 +36,23 @@ interface RouteContext {
  *
  * CHANGED: Now returns a suggestion only, does NOT execute the trade.
  * Use POST /api/agents/[id]/execute to confirm and execute the trade.
+ *
+ * Request body (optional):
+ * - force_refresh: boolean - Skip cache and run fresh analysis (costs credits)
  */
 export async function POST(request: Request, { params }: RouteContext) {
   try {
     const { id: agentId } = await params;
     const supabase = await createClient();
+
+    // Parse request body for force_refresh option
+    let forceRefresh = false;
+    try {
+      const body = await request.json();
+      forceRefresh = body.force_refresh === true;
+    } catch {
+      // No body or invalid JSON - that's okay, use defaults
+    }
 
     // Get authenticated user
     const {
@@ -56,21 +81,6 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    // Check credits
-    if (userProfile.credits_remaining <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_CREDITS",
-            message: "No credits remaining. Credits reset daily.",
-            credits_reset_at: userProfile.credits_reset_at,
-          },
-        },
-        { status: 402 }
-      );
-    }
-
     // Fetch agent (must belong to user and be active)
     const { data: agent } = (await supabase
       .from("agents")
@@ -93,6 +103,79 @@ export async function POST(request: Request, { params }: RouteContext) {
           error: { code: "AGENT_INACTIVE", message: "Agent is not active. Activate it first." },
         },
         { status: 400 }
+      );
+    }
+
+    // Check for cached recommendation (if not forcing refresh)
+    if (!forceRefresh) {
+      const { data: cachedRecommendation } = (await supabase
+        .from("agent_recommendations")
+        .select("*")
+        .eq("agent_id", agentId)
+        .eq("is_executed", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()) as { data: AgentRecommendation | null };
+
+      if (cachedRecommendation) {
+        // Return cached recommendation without consuming credits
+        const portfolio = await getPortfolioSummary(agent);
+
+        const suggestion: TradeSuggestion = {
+          action: cachedRecommendation.action,
+          ticker: cachedRecommendation.ticker,
+          quantity: cachedRecommendation.quantity,
+          current_price: cachedRecommendation.current_price,
+          total_cost: cachedRecommendation.total_cost,
+          reasoning: cachedRecommendation.reasoning,
+          confidence: cachedRecommendation.confidence,
+        };
+
+        const response: AnalysisResponse = {
+          suggestion,
+          portfolio,
+        };
+
+        const cacheAgeMinutes = Math.round(
+          (Date.now() - new Date(cachedRecommendation.created_at).getTime()) / 60000
+        );
+
+        return NextResponse.json({
+          success: true,
+          data: response,
+          meta: {
+            news_summary: cachedRecommendation.news_summary,
+            risk_assessment: cachedRecommendation.risk_assessment,
+            api_cost: 0, // No API cost for cached recommendation
+            input_tokens: 0,
+            output_tokens: 0,
+            credits_remaining: userProfile.credits_remaining, // Credits NOT deducted
+            news_source: cachedRecommendation.news_source || "cached",
+            news_count: 0,
+            is_cached: true,
+            cache_age_minutes: cacheAgeMinutes,
+            cached_at: cachedRecommendation.created_at,
+            expires_at: cachedRecommendation.expires_at,
+            recommendation_id: cachedRecommendation.id,
+          },
+        });
+      }
+    }
+
+    // No cache or force refresh - need to run fresh analysis
+    // Check credits (only needed for fresh analysis)
+    if (userProfile.credits_remaining <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "NO_CREDITS",
+            message: "No credits remaining. Credits reset daily.",
+            credits_reset_at: userProfile.credits_reset_at,
+          },
+        },
+        { status: 402 }
       );
     }
 
@@ -120,6 +203,49 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Fetch portfolio with real positions and current prices
     const portfolio = await getPortfolioSummary(agent);
+
+    // Check for stop-loss triggered positions BEFORE running AI analysis
+    // This saves credits by returning forced SELL immediately
+    const stopLossPosition = checkStopLoss(portfolio.positions, riskParams.stop_loss_pct);
+    if (stopLossPosition) {
+      // Stop-loss triggered! Force SELL without AI analysis (saves credits)
+      const suggestion: TradeSuggestion = {
+        action: "SELL",
+        ticker: stopLossPosition.ticker,
+        quantity: stopLossPosition.quantity,
+        current_price: stopLossPosition.current_price,
+        total_cost: stopLossPosition.current_value,
+        reasoning: `STOP-LOSS TRIGGERED: ${stopLossPosition.ticker} has dropped ${Math.abs(stopLossPosition.unrealized_pnl_pct).toFixed(1)}%, exceeding your ${riskParams.stop_loss_pct}% stop-loss threshold. Automatic sell recommended to limit losses. Current loss: $${Math.abs(stopLossPosition.unrealized_pnl).toFixed(2)}.`,
+        confidence: 1.0, // High confidence for stop-loss
+      };
+
+      const response: AnalysisResponse = {
+        suggestion,
+        portfolio,
+      };
+
+      // Note: We do NOT deduct credits for stop-loss triggered recommendations
+      // as this is a risk management feature, not an AI analysis
+
+      return NextResponse.json({
+        success: true,
+        data: response,
+        meta: {
+          news_summary: "Stop-loss triggered - automatic risk management",
+          risk_assessment: "High",
+          api_cost: 0,
+          input_tokens: 0,
+          output_tokens: 0,
+          credits_remaining: userProfile.credits_remaining, // Credits NOT deducted
+          news_source: "stop-loss",
+          news_count: 0,
+          is_cached: false,
+          is_stop_loss: true,
+          stop_loss_pct: riskParams.stop_loss_pct,
+          position_loss_pct: stopLossPosition.unrealized_pnl_pct,
+        },
+      });
+    }
 
     // Determine preferred news source from agent config
     const agentNewsSources = (agent.news_sources as string[]) || ["finnhub"];
@@ -171,8 +297,30 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Build context for Claude
     const systemPrompt = buildSystemPrompt(agent.name, agent.system_prompt, riskParams);
-    const portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital);
+    let portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital);
     const newsContext = buildNewsContext(news);
+
+    // If force refresh, fetch and add context about the previous recommendation
+    if (forceRefresh) {
+      const { data: prevRecommendation } = (await supabase
+        .from("agent_recommendations")
+        .select("*")
+        .eq("agent_id", agentId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()) as { data: AgentRecommendation | null };
+
+      if (prevRecommendation) {
+        const prevContext = buildPreviousRecommendationContext({
+          action: prevRecommendation.action,
+          ticker: prevRecommendation.ticker,
+          quantity: prevRecommendation.quantity,
+          reasoning: prevRecommendation.reasoning,
+          created_at: prevRecommendation.created_at,
+        });
+        portfolioContext = portfolioContext + "\n" + prevContext;
+      }
+    }
 
     // Determine which model to use
     const claudeModel: ClaudeModel =
@@ -229,6 +377,39 @@ export async function POST(request: Request, { params }: RouteContext) {
       confidence: decision.confidence,
     };
 
+    // Calculate cache expiry time
+    const expiresAt = new Date(
+      Date.now() + RECOMMENDATION_CACHE_HOURS * 60 * 60 * 1000
+    ).toISOString();
+
+    // Save recommendation to database for caching
+    const recommendationData: AgentRecommendationInsert = {
+      agent_id: agentId,
+      action: decision.action,
+      ticker: decision.ticker,
+      quantity: decision.quantity,
+      current_price: currentPrice,
+      total_cost: totalCost,
+      reasoning: decision.reasoning,
+      confidence: decision.confidence,
+      news_summary: decision.news_summary || null,
+      risk_assessment: decision.risk_assessment || null,
+      api_cost: claudeResponse.cost,
+      news_source: newsSource,
+      expires_at: expiresAt,
+    };
+
+    const { data: savedRecommendation, error: recommendationError } = (await supabase
+      .from("agent_recommendations")
+      .insert(recommendationData as never)
+      .select()
+      .single()) as { data: AgentRecommendation | null; error: unknown };
+
+    if (recommendationError) {
+      console.error("Error saving recommendation:", recommendationError);
+      // Don't fail the request if saving fails - continue with the response
+    }
+
     // Deduct credit for the analysis
     await supabase
       .from("users")
@@ -266,6 +447,11 @@ export async function POST(request: Request, { params }: RouteContext) {
         credits_remaining: userProfile.credits_remaining - 1,
         news_source: newsSource,
         news_count: news.length,
+        is_cached: false,
+        cache_age_minutes: 0,
+        cached_at: new Date().toISOString(),
+        expires_at: expiresAt,
+        recommendation_id: savedRecommendation?.id || null,
       },
     });
   } catch (err) {
