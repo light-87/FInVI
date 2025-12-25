@@ -15,7 +15,7 @@ CREATE TABLE public.users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     display_name TEXT NOT NULL,
     avatar_url TEXT,
-    credits_remaining INTEGER NOT NULL DEFAULT 10,
+    credits_remaining INTEGER NOT NULL DEFAULT 50,
     credits_reset_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '1 day'),
     tier TEXT NOT NULL DEFAULT 'free' CHECK (tier IN ('free', 'pro', 'enterprise')),
     total_analyses INTEGER NOT NULL DEFAULT 0,
