@@ -314,6 +314,16 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     trade = tradeResult!;
 
+    // Mark any pending recommendations for this agent as executed
+    await supabase
+      .from("agent_recommendations")
+      .update({
+        is_executed: true,
+        executed_at: new Date().toISOString(),
+      } as never)
+      .eq("agent_id", agentId)
+      .eq("is_executed", false);
+
     // Get updated portfolio
     const updatedAgent = { ...agent, cash_balance: newCashBalance };
     const portfolio = await getPortfolioSummary(updatedAgent);

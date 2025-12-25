@@ -11,6 +11,9 @@ interface TradeConfirmationModalProps {
   portfolio: PortfolioSummary;
   newsSummary: string;
   riskAssessment: string;
+  isCached?: boolean;
+  cacheAgeMinutes?: number;
+  onRefresh?: () => void;
 }
 
 export function TradeConfirmationModal({
@@ -21,6 +24,9 @@ export function TradeConfirmationModal({
   portfolio,
   newsSummary,
   riskAssessment,
+  isCached,
+  cacheAgeMinutes,
+  onRefresh,
 }: TradeConfirmationModalProps) {
   const [enableAuto, setEnableAuto] = useState(false);
   const [autoInterval, setAutoInterval] = useState<"3h" | "10h" | "24h">("24h");
@@ -62,23 +68,40 @@ export function TradeConfirmationModal({
       <div className="relative bg-surface border border-border rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <span
-              className={`px-4 py-2 rounded-lg text-lg font-bold ${
-                suggestion.action === "BUY"
-                  ? "bg-profit/20 text-profit"
-                  : suggestion.action === "SELL"
-                  ? "bg-loss/20 text-loss"
-                  : "bg-text-tertiary/20 text-text-secondary"
-              }`}
-            >
-              {suggestion.action}
-            </span>
-            <div>
-              <span className="text-2xl font-mono font-bold text-text-primary">
-                {suggestion.ticker}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span
+                className={`px-4 py-2 rounded-lg text-lg font-bold ${
+                  suggestion.action === "BUY"
+                    ? "bg-profit/20 text-profit"
+                    : suggestion.action === "SELL"
+                    ? "bg-loss/20 text-loss"
+                    : "bg-text-tertiary/20 text-text-secondary"
+                }`}
+              >
+                {suggestion.action}
               </span>
+              <div>
+                <span className="text-2xl font-mono font-bold text-text-primary">
+                  {suggestion.ticker}
+                </span>
+              </div>
             </div>
+            {isCached && (
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs bg-secondary/20 text-secondary rounded-full">
+                  Cached ({cacheAgeMinutes}m ago)
+                </span>
+                {onRefresh && (
+                  <button
+                    onClick={onRefresh}
+                    className="text-xs text-primary hover:text-primary-muted underline"
+                  >
+                    Refresh
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

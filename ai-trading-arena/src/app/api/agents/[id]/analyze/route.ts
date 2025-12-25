@@ -10,7 +10,19 @@ import {
 import { getMarketNews, getMockNews } from "@/lib/finnhub/client";
 import { getPerplexityMarketNews, getMockPerplexityNews } from "@/lib/perplexity/client";
 import { getPortfolioSummary, getTickerPrice } from "@/lib/portfolio/helpers";
-import type { Agent, RiskParams, User, TradeSuggestion, AnalysisResponse, PositionWithPnL } from "@/types/database";
+import type {
+  Agent,
+  RiskParams,
+  User,
+  TradeSuggestion,
+  AnalysisResponse,
+  PositionWithPnL,
+  AgentRecommendation,
+  AgentRecommendationInsert,
+} from "@/types/database";
+
+// Cache duration in hours (recommendations expire after this time)
+const RECOMMENDATION_CACHE_HOURS = 1;
 
 type NewsSource = "finnhub" | "perplexity";
 
@@ -23,11 +35,23 @@ interface RouteContext {
  *
  * CHANGED: Now returns a suggestion only, does NOT execute the trade.
  * Use POST /api/agents/[id]/execute to confirm and execute the trade.
+ *
+ * Request body (optional):
+ * - force_refresh: boolean - Skip cache and run fresh analysis (costs credits)
  */
 export async function POST(request: Request, { params }: RouteContext) {
   try {
     const { id: agentId } = await params;
     const supabase = await createClient();
+
+    // Parse request body for force_refresh option
+    let forceRefresh = false;
+    try {
+      const body = await request.json();
+      forceRefresh = body.force_refresh === true;
+    } catch {
+      // No body or invalid JSON - that's okay, use defaults
+    }
 
     // Get authenticated user
     const {
@@ -56,21 +80,6 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    // Check credits
-    if (userProfile.credits_remaining <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NO_CREDITS",
-            message: "No credits remaining. Credits reset daily.",
-            credits_reset_at: userProfile.credits_reset_at,
-          },
-        },
-        { status: 402 }
-      );
-    }
-
     // Fetch agent (must belong to user and be active)
     const { data: agent } = (await supabase
       .from("agents")
@@ -93,6 +102,79 @@ export async function POST(request: Request, { params }: RouteContext) {
           error: { code: "AGENT_INACTIVE", message: "Agent is not active. Activate it first." },
         },
         { status: 400 }
+      );
+    }
+
+    // Check for cached recommendation (if not forcing refresh)
+    if (!forceRefresh) {
+      const { data: cachedRecommendation } = (await supabase
+        .from("agent_recommendations")
+        .select("*")
+        .eq("agent_id", agentId)
+        .eq("is_executed", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()) as { data: AgentRecommendation | null };
+
+      if (cachedRecommendation) {
+        // Return cached recommendation without consuming credits
+        const portfolio = await getPortfolioSummary(agent);
+
+        const suggestion: TradeSuggestion = {
+          action: cachedRecommendation.action,
+          ticker: cachedRecommendation.ticker,
+          quantity: cachedRecommendation.quantity,
+          current_price: cachedRecommendation.current_price,
+          total_cost: cachedRecommendation.total_cost,
+          reasoning: cachedRecommendation.reasoning,
+          confidence: cachedRecommendation.confidence,
+        };
+
+        const response: AnalysisResponse = {
+          suggestion,
+          portfolio,
+        };
+
+        const cacheAgeMinutes = Math.round(
+          (Date.now() - new Date(cachedRecommendation.created_at).getTime()) / 60000
+        );
+
+        return NextResponse.json({
+          success: true,
+          data: response,
+          meta: {
+            news_summary: cachedRecommendation.news_summary,
+            risk_assessment: cachedRecommendation.risk_assessment,
+            api_cost: 0, // No API cost for cached recommendation
+            input_tokens: 0,
+            output_tokens: 0,
+            credits_remaining: userProfile.credits_remaining, // Credits NOT deducted
+            news_source: cachedRecommendation.news_source || "cached",
+            news_count: 0,
+            is_cached: true,
+            cache_age_minutes: cacheAgeMinutes,
+            cached_at: cachedRecommendation.created_at,
+            expires_at: cachedRecommendation.expires_at,
+            recommendation_id: cachedRecommendation.id,
+          },
+        });
+      }
+    }
+
+    // No cache or force refresh - need to run fresh analysis
+    // Check credits (only needed for fresh analysis)
+    if (userProfile.credits_remaining <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "NO_CREDITS",
+            message: "No credits remaining. Credits reset daily.",
+            credits_reset_at: userProfile.credits_reset_at,
+          },
+        },
+        { status: 402 }
       );
     }
 
@@ -229,6 +311,39 @@ export async function POST(request: Request, { params }: RouteContext) {
       confidence: decision.confidence,
     };
 
+    // Calculate cache expiry time
+    const expiresAt = new Date(
+      Date.now() + RECOMMENDATION_CACHE_HOURS * 60 * 60 * 1000
+    ).toISOString();
+
+    // Save recommendation to database for caching
+    const recommendationData: AgentRecommendationInsert = {
+      agent_id: agentId,
+      action: decision.action,
+      ticker: decision.ticker,
+      quantity: decision.quantity,
+      current_price: currentPrice,
+      total_cost: totalCost,
+      reasoning: decision.reasoning,
+      confidence: decision.confidence,
+      news_summary: decision.news_summary || null,
+      risk_assessment: decision.risk_assessment || null,
+      api_cost: claudeResponse.cost,
+      news_source: newsSource,
+      expires_at: expiresAt,
+    };
+
+    const { data: savedRecommendation, error: recommendationError } = await supabase
+      .from("agent_recommendations")
+      .insert(recommendationData as never)
+      .select()
+      .single();
+
+    if (recommendationError) {
+      console.error("Error saving recommendation:", recommendationError);
+      // Don't fail the request if saving fails - continue with the response
+    }
+
     // Deduct credit for the analysis
     await supabase
       .from("users")
@@ -266,6 +381,11 @@ export async function POST(request: Request, { params }: RouteContext) {
         credits_remaining: userProfile.credits_remaining - 1,
         news_source: newsSource,
         news_count: news.length,
+        is_cached: false,
+        cache_age_minutes: 0,
+        cached_at: new Date().toISOString(),
+        expires_at: expiresAt,
+        recommendation_id: savedRecommendation?.id || null,
       },
     });
   } catch (err) {
