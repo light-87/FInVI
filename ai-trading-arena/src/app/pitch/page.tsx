@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import mockAgents from "@/data/mock-agents.json";
 import mockTrades from "@/data/mock-trades.json";
 
@@ -14,8 +15,9 @@ export default function PitchDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Link href="/" className="text-2xl font-bold font-display text-primary">
-                Vivy
+              <Link href="/" className="flex items-center gap-2">
+                <Image src="/icons/logo/vivy-logo.svg" width={32} height={32} alt="Vivy" />
+                <span className="text-2xl font-bold font-display text-primary">Vivy</span>
               </Link>
               <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-mono rounded">
                 LIVE DEMO
@@ -98,10 +100,10 @@ export default function PitchDashboard() {
                       index === 0 ? "bg-gradient-to-r from-rank-gold/10 to-transparent" : ""
                     }`}
                   >
-                    <div className="w-8 text-center">
-                      {index === 0 && <span className="text-2xl">🥇</span>}
-                      {index === 1 && <span className="text-2xl">🥈</span>}
-                      {index === 2 && <span className="text-2xl">🥉</span>}
+                    <div className="w-8 flex justify-center">
+                      {index === 0 && <Image src="/icons/badges/rank-gold.svg" width={28} height={28} alt="1st" />}
+                      {index === 1 && <Image src="/icons/badges/rank-silver.svg" width={28} height={28} alt="2nd" />}
+                      {index === 2 && <Image src="/icons/badges/rank-bronze.svg" width={28} height={28} alt="3rd" />}
                       {index > 2 && (
                         <span className="text-text-tertiary font-mono text-lg">{index + 1}</span>
                       )}
@@ -138,7 +140,7 @@ export default function PitchDashboard() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">🥇</span>
+                      <Image src="/icons/badges/rank-gold.svg" width={32} height={32} alt="1st place" />
                       <h2 className="text-2xl font-bold font-display text-text-primary">{topAgent.name}</h2>
                       <span className="px-2 py-1 bg-profit/20 text-profit text-xs font-mono rounded">
                         TOP PERFORMER
@@ -251,22 +253,22 @@ export default function PitchDashboard() {
               <h3 className="font-bold font-display text-text-primary mb-4">Why Investors Love Vivy</h3>
               <div className="space-y-4">
                 <Feature
-                  icon="📊"
+                  iconSrc="/icons/investor/investor-alpha.svg"
                   title="Crowdsourced Alpha"
                   description="Every strategy is a data point. We're building the largest dataset of explainable trading strategies."
                 />
                 <Feature
-                  icon="🧠"
+                  iconSrc="/icons/investor/investor-brain.svg"
                   title="No Black Boxes"
                   description="Every trade comes with full reasoning. Users learn, we learn, AI improves."
                 />
                 <Feature
-                  icon="🚀"
+                  iconSrc="/icons/investor/investor-rocket.svg"
                   title="Viral Growth Loop"
                   description="Leaderboard competition drives engagement. Top strategies get copied."
                 />
                 <Feature
-                  icon="💰"
+                  iconSrc="/icons/investor/investor-money.svg"
                   title="Clear Monetization"
                   description="Pay-per-analysis model. Users pay for AI usage, we take margin."
                 />
@@ -362,10 +364,12 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Feature({ icon, title, description }: { icon: string; title: string; description: string }) {
+function Feature({ iconSrc, title, description }: { iconSrc: string; title: string; description: string }) {
   return (
     <div className="flex gap-3">
-      <span className="text-xl">{icon}</span>
+      <div className="shrink-0">
+        <Image src={iconSrc} width={24} height={24} alt={title} />
+      </div>
       <div>
         <h4 className="font-semibold text-text-primary text-sm">{title}</h4>
         <p className="text-text-tertiary text-xs leading-relaxed">{description}</p>

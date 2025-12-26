@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -8,6 +9,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
+              <Image src="/icons/logo/vivy-logo.svg" width={32} height={32} alt="Vivy" />
               <span className="text-2xl font-bold font-display text-primary">Vivy</span>
             </div>
             <div className="flex items-center gap-4">
@@ -257,14 +259,14 @@ export default function Home() {
                 <div className="bg-background border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="text-rank-gold">🥇</span>
+                      <Image src="/icons/badges/rank-gold.svg" width={24} height={24} alt="1st place" />
                       <span className="text-text-primary font-mono">MomentumKing</span>
                     </div>
                     <span className="text-profit font-mono">+34.2%</span>
                   </div>
                   <div className="flex items-center justify-between text-sm mt-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-rank-silver">🥈</span>
+                      <Image src="/icons/badges/rank-silver.svg" width={24} height={24} alt="2nd place" />
                       <span className="text-text-secondary font-mono">ValueHunter</span>
                     </div>
                     <span className="text-profit font-mono">+28.7%</span>
@@ -290,32 +292,32 @@ export default function Home() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />}
+              iconSrc="/icons/features/feature-nlp.svg"
               title="Natural Language Strategies"
               description="No Python. No APIs. Describe your thesis in plain English and Vivy handles the rest."
             />
             <FeatureCard
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />}
+              iconSrc="/icons/features/feature-paper.svg"
               title="Paper-to-Strategy"
               description="Upload academic papers or research. Vivy extracts trading signals and builds the agent."
             />
             <FeatureCard
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />}
+              iconSrc="/icons/features/feature-analytics.svg"
               title="Real-Time Analytics"
               description="Track performance, win rates, and drawdowns. Compare against the market and other agents."
             />
             <FeatureCard
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />}
+              iconSrc="/icons/features/feature-explain.svg"
               title="Explainable Trades"
               description="Every trade shows the news, reasoning, and confidence level. No black boxes."
             />
             <FeatureCard
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />}
+              iconSrc="/icons/features/feature-pricing.svg"
               title="Transparent Pricing"
               description="Pay only for AI usage. See exact costs per trade. No hidden fees or subscriptions."
             />
             <FeatureCard
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />}
+              iconSrc="/icons/features/feature-community.svg"
               title="Crowdsourced Alpha"
               description="Learn from the community. See which strategies are working. Adapt and improve."
             />
@@ -440,6 +442,7 @@ export default function Home() {
       <footer className="py-12 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
+            <Image src="/icons/logo/vivy-logo.svg" width={24} height={24} alt="Vivy" />
             <span className="text-xl font-bold font-display text-primary">Vivy</span>
             <span className="text-text-tertiary text-sm">© 2024</span>
           </div>
@@ -452,13 +455,11 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function FeatureCard({ iconSrc, title, description }: { iconSrc: string; title: string; description: string }) {
   return (
     <div className="bg-background border border-border rounded-xl p-6 hover:border-primary/30 transition-all group">
       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-        <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          {icon}
-        </svg>
+        <Image src={iconSrc} width={28} height={28} alt={title} />
       </div>
       <h3 className="text-lg font-bold font-display text-text-primary mb-2">{title}</h3>
       <p className="text-text-secondary text-sm leading-relaxed">{description}</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface LeaderboardEntry {
   rank: number;
@@ -31,25 +32,13 @@ const sortLabels: Record<SortOption, string> = {
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
-    return (
-      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-400 font-bold">
-        1
-      </span>
-    );
+    return <Image src="/icons/badges/rank-gold.svg" width={32} height={32} alt="1st place" />;
   }
   if (rank === 2) {
-    return (
-      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-400/20 text-gray-300 font-bold">
-        2
-      </span>
-    );
+    return <Image src="/icons/badges/rank-silver.svg" width={32} height={32} alt="2nd place" />;
   }
   if (rank === 3) {
-    return (
-      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-600/20 text-orange-400 font-bold">
-        3
-      </span>
-    );
+    return <Image src="/icons/badges/rank-bronze.svg" width={32} height={32} alt="3rd place" />;
   }
   return (
     <span className="inline-flex items-center justify-center w-8 h-8 text-text-tertiary font-mono">
