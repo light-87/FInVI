@@ -16,7 +16,7 @@ export default function PitchDashboard() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <Link href="/" className="flex items-center gap-2">
-                <Image src="/icons/logo/vivy-logo.svg" width={32} height={32} alt="Vivy" unoptimized />
+                <Image src="/icons/logo/vivy-logo.svg" width={32} height={32} alt="Vivy" />
                 <span className="text-2xl font-bold font-display text-primary">Vivy</span>
               </Link>
               <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-mono rounded">
@@ -101,9 +101,9 @@ export default function PitchDashboard() {
                     }`}
                   >
                     <div className="w-8 flex justify-center">
-                      {index === 0 && <Image src="/icons/badges/rank-gold.svg" width={28} height={28} alt="1st" unoptimized />}
-                      {index === 1 && <Image src="/icons/badges/rank-silver.svg" width={28} height={28} alt="2nd" unoptimized />}
-                      {index === 2 && <Image src="/icons/badges/rank-bronze.svg" width={28} height={28} alt="3rd" unoptimized />}
+                      {index === 0 && <Image src="/icons/badges/rank-gold.svg" width={28} height={28} alt="1st" />}
+                      {index === 1 && <Image src="/icons/badges/rank-silver.svg" width={28} height={28} alt="2nd" />}
+                      {index === 2 && <Image src="/icons/badges/rank-bronze.svg" width={28} height={28} alt="3rd" />}
                       {index > 2 && (
                         <span className="text-text-tertiary font-mono text-lg">{index + 1}</span>
                       )}
@@ -140,7 +140,7 @@ export default function PitchDashboard() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Image src="/icons/badges/rank-gold.svg" width={32} height={32} alt="1st place" unoptimized />
+                      <Image src="/icons/badges/rank-gold.svg" width={32} height={32} alt="1st place" />
                       <h2 className="text-2xl font-bold font-display text-text-primary">{topAgent.name}</h2>
                       <span className="px-2 py-1 bg-profit/20 text-profit text-xs font-mono rounded">
                         TOP PERFORMER
@@ -368,7 +368,7 @@ function Feature({ iconSrc, title, description }: { iconSrc: string; title: stri
   return (
     <div className="flex gap-3">
       <div className="shrink-0">
-        <Image src={iconSrc} width={24} height={24} alt={title} unoptimized />
+        <Image src={iconSrc} width={24} height={24} alt={title} />
       </div>
       <div>
         <h4 className="font-semibold text-text-primary text-sm">{title}</h4>

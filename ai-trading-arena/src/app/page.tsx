@@ -9,7 +9,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <Image src="/icons/logo/vivy-logo.svg" width={32} height={32} alt="Vivy" unoptimized />
+              <Image src="/icons/logo/vivy-logo.svg" width={32} height={32} alt="Vivy" />
               <span className="text-2xl font-bold font-display text-primary">Vivy</span>
             </div>
             <div className="flex items-center gap-4">
@@ -259,14 +259,14 @@ export default function Home() {
                 <div className="bg-background border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <Image src="/icons/badges/rank-gold.svg" width={24} height={24} alt="1st place" unoptimized />
+                      <Image src="/icons/badges/rank-gold.svg" width={24} height={24} alt="1st place" />
                       <span className="text-text-primary font-mono">MomentumKing</span>
                     </div>
                     <span className="text-profit font-mono">+34.2%</span>
                   </div>
                   <div className="flex items-center justify-between text-sm mt-2">
                     <div className="flex items-center gap-2">
-                      <Image src="/icons/badges/rank-silver.svg" width={24} height={24} alt="2nd place" unoptimized />
+                      <Image src="/icons/badges/rank-silver.svg" width={24} height={24} alt="2nd place" />
                       <span className="text-text-secondary font-mono">ValueHunter</span>
                     </div>
                     <span className="text-profit font-mono">+28.7%</span>
@@ -442,7 +442,7 @@ export default function Home() {
       <footer className="py-12 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Image src="/icons/logo/vivy-logo.svg" width={24} height={24} alt="Vivy" unoptimized />
+            <Image src="/icons/logo/vivy-logo.svg" width={24} height={24} alt="Vivy" />
             <span className="text-xl font-bold font-display text-primary">Vivy</span>
             <span className="text-text-tertiary text-sm">© 2024</span>
           </div>
@@ -459,7 +459,7 @@ function FeatureCard({ iconSrc, title, description }: { iconSrc: string; title: 
   return (
     <div className="bg-background border border-border rounded-xl p-6 hover:border-primary/30 transition-all group">
       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-        <Image src={iconSrc} width={28} height={28} alt={title} unoptimized />
+        <Image src={iconSrc} width={28} height={28} alt={title} />
       </div>
       <h3 className="text-lg font-bold font-display text-text-primary mb-2">{title}</h3>
       <p className="text-text-secondary text-sm leading-relaxed">{description}</p>
