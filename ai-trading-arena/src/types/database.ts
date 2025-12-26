@@ -311,6 +311,68 @@ export type Database = {
           updated_at?: string;
         };
       };
+      agent_recommendations: {
+        Row: {
+          id: string;
+          agent_id: string;
+          action: "BUY" | "SELL" | "HOLD";
+          ticker: string;
+          quantity: number;
+          current_price: number;
+          total_cost: number;
+          reasoning: string;
+          confidence: number;
+          news_summary: string | null;
+          risk_assessment: string | null;
+          api_cost: number;
+          news_source: string | null;
+          is_executed: boolean;
+          executed_at: string | null;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agent_id: string;
+          action: "BUY" | "SELL" | "HOLD";
+          ticker: string;
+          quantity?: number;
+          current_price?: number;
+          total_cost?: number;
+          reasoning: string;
+          confidence: number;
+          news_summary?: string | null;
+          risk_assessment?: string | null;
+          api_cost?: number;
+          news_source?: string | null;
+          is_executed?: boolean;
+          executed_at?: string | null;
+          expires_at: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agent_id?: string;
+          action?: "BUY" | "SELL" | "HOLD";
+          ticker?: string;
+          quantity?: number;
+          current_price?: number;
+          total_cost?: number;
+          reasoning?: string;
+          confidence?: number;
+          news_summary?: string | null;
+          risk_assessment?: string | null;
+          api_cost?: number;
+          news_source?: string | null;
+          is_executed?: boolean;
+          executed_at?: string | null;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Functions: {
       check_user_credits: {
@@ -371,6 +433,10 @@ export type PortfolioSnapshot = Database["public"]["Tables"]["portfolio_snapshot
 export type PortfolioSnapshotInsert = Database["public"]["Tables"]["portfolio_snapshots"]["Insert"];
 
 export type LeaderboardEntry = Database["public"]["Tables"]["leaderboard"]["Row"];
+
+export type AgentRecommendation = Database["public"]["Tables"]["agent_recommendations"]["Row"];
+export type AgentRecommendationInsert = Database["public"]["Tables"]["agent_recommendations"]["Insert"];
+export type AgentRecommendationUpdate = Database["public"]["Tables"]["agent_recommendations"]["Update"];
 
 // Position table types
 export type PositionRow = Database["public"]["Tables"]["positions"]["Row"];

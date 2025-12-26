@@ -19,14 +19,24 @@ interface AnalysisMeta {
   credits_remaining: number;
   news_source: string;
   news_count: number;
+  is_cached?: boolean;
+  cache_age_minutes?: number;
+  cached_at?: string;
+  expires_at?: string;
+  recommendation_id?: string | null;
+  is_stop_loss?: boolean;
+  stop_loss_pct?: number;
+  position_loss_pct?: number;
 }
 
 interface RunAnalysisProps {
   agentId: string;
   isActive: boolean;
+  autoExecute?: boolean;
+  autoInterval?: "3h" | "10h" | "24h";
 }
 
-export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
+export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterval = "24h" }: RunAnalysisProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -35,7 +45,40 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleRunAnalysis = async () => {
+  const executeTradeAutomatically = async (suggestion: TradeSuggestion) => {
+    try {
+      const res = await fetch(`/api/agents/${agentId}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: suggestion.action,
+          ticker: suggestion.ticker,
+          quantity: suggestion.quantity,
+          price: suggestion.current_price,
+          enable_auto: true,
+          auto_interval: autoInterval,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Trade execution failed");
+      }
+
+      setSuccessMessage(
+        `Auto-executed: ${suggestion.action} ${suggestion.quantity} ${suggestion.ticker} @ $${suggestion.current_price.toFixed(2)}`
+      );
+
+      // Dispatch event to notify portfolio section to refresh
+      window.dispatchEvent(new CustomEvent("trade-executed"));
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Auto-execution failed");
+    }
+  };
+
+  const handleRunAnalysis = async (forceRefresh = false) => {
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -44,6 +87,8 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
     try {
       const res = await fetch(`/api/agents/${agentId}/analyze`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force_refresh: forceRefresh }),
       });
 
       const data = await res.json();
@@ -57,7 +102,13 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
 
       // If action is HOLD, no confirmation needed
       if (data.data.suggestion.action === "HOLD") {
-        setSuccessMessage("AI recommends: HOLD - No trade suggested");
+        const cacheNote = data.meta.is_cached
+          ? ` (cached ${data.meta.cache_age_minutes}m ago)`
+          : "";
+        setSuccessMessage(`AI recommends: HOLD - No trade suggested${cacheNote}`);
+      } else if (autoExecute) {
+        // Auto-execute enabled - execute BUY or SELL immediately without confirmation
+        await executeTradeAutomatically(data.data.suggestion);
       } else {
         // Show confirmation modal for BUY/SELL
         setShowConfirmation(true);
@@ -129,10 +180,28 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
         {analysisResult && analysisResult.suggestion.action === "HOLD" && analysisMeta && (
           <div className="mb-6 bg-surface border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-text-primary">Analysis Complete</h4>
-              <span className="text-xs text-text-tertiary">
-                Cost: ${analysisMeta.api_cost.toFixed(4)} | Credits left: {analysisMeta.credits_remaining}
-              </span>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-text-primary">Analysis Complete</h4>
+                {analysisMeta.is_cached && (
+                  <span className="px-2 py-0.5 text-xs bg-secondary/20 text-secondary rounded-full">
+                    Cached ({analysisMeta.cache_age_minutes}m ago)
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {analysisMeta.is_cached && (
+                  <button
+                    onClick={() => handleRunAnalysis(true)}
+                    disabled={isLoading}
+                    className="text-xs text-primary hover:text-primary-muted underline disabled:opacity-50"
+                  >
+                    Refresh (1 credit)
+                  </button>
+                )}
+                <span className="text-xs text-text-tertiary">
+                  {analysisMeta.is_cached ? "No credits used" : `Cost: $${analysisMeta.api_cost.toFixed(4)}`} | Credits: {analysisMeta.credits_remaining}
+                </span>
+              </div>
             </div>
 
             {/* HOLD Badge */}
@@ -165,9 +234,11 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
                 <span className="text-text-tertiary">
                   Risk: <span className="text-text-primary">{analysisMeta.risk_assessment}</span>
                 </span>
-                <span className="text-text-tertiary">
-                  Tokens: <span className="text-text-primary">{analysisMeta.input_tokens + analysisMeta.output_tokens}</span>
-                </span>
+                {!analysisMeta.is_cached && (
+                  <span className="text-text-tertiary">
+                    Tokens: <span className="text-text-primary">{analysisMeta.input_tokens + analysisMeta.output_tokens}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -191,7 +262,7 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
               : "Activate your agent first to run analysis"}
           </p>
           <button
-            onClick={handleRunAnalysis}
+            onClick={() => handleRunAnalysis(false)}
             disabled={isLoading || !isActive}
             className="px-6 py-3 bg-primary text-background font-semibold rounded-lg hover:bg-primary-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
           >
@@ -239,6 +310,15 @@ export function RunAnalysis({ agentId, isActive }: RunAnalysisProps) {
           portfolio={analysisResult.portfolio}
           newsSummary={analysisMeta.news_summary}
           riskAssessment={analysisMeta.risk_assessment}
+          isCached={analysisMeta.is_cached}
+          cacheAgeMinutes={analysisMeta.cache_age_minutes}
+          onRefresh={() => {
+            setShowConfirmation(false);
+            handleRunAnalysis(true);
+          }}
+          isStopLoss={analysisMeta.is_stop_loss}
+          stopLossPct={analysisMeta.stop_loss_pct}
+          positionLossPct={analysisMeta.position_loss_pct}
         />
       )}
     </>

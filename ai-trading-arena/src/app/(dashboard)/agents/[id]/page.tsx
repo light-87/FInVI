@@ -102,7 +102,12 @@ export default async function AgentDetailPage({ params }: PageProps) {
       </div>
 
       {/* Run Analysis - Prominent placement at top */}
-      <RunAnalysis agentId={agent.id} isActive={agent.status === "active"} />
+      <RunAnalysis
+        agentId={agent.id}
+        isActive={agent.status === "active"}
+        autoExecute={agent.auto_execute}
+        autoInterval={agent.auto_interval}
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
