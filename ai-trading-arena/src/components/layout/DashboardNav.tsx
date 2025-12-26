@@ -29,7 +29,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/icons/logo/vivy-logo.svg" width={28} height={28} alt="Vivy" />
+            <Image src="/icons/logo/vivy-logo.svg" width={28} height={28} alt="Vivy" unoptimized />
             <span className="text-xl font-bold font-display text-primary">
               Vivy
             </span>

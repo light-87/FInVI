@@ -32,13 +32,13 @@ const sortLabels: Record<SortOption, string> = {
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
-    return <Image src="/icons/badges/rank-gold.svg" width={32} height={32} alt="1st place" />;
+    return <Image src="/icons/badges/rank-gold.svg" width={32} height={32} alt="1st place" unoptimized />;
   }
   if (rank === 2) {
-    return <Image src="/icons/badges/rank-silver.svg" width={32} height={32} alt="2nd place" />;
+    return <Image src="/icons/badges/rank-silver.svg" width={32} height={32} alt="2nd place" unoptimized />;
   }
   if (rank === 3) {
-    return <Image src="/icons/badges/rank-bronze.svg" width={32} height={32} alt="3rd place" />;
+    return <Image src="/icons/badges/rank-bronze.svg" width={32} height={32} alt="3rd place" unoptimized />;
   }
   return (
     <span className="inline-flex items-center justify-center w-8 h-8 text-text-tertiary font-mono">
