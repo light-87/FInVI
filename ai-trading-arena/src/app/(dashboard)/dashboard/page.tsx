@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Agent, Trade, User } from "@/types/database";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
   title: "Dashboard | Vivy",
@@ -176,7 +177,7 @@ export default async function DashboardPage() {
               href="/agents/new"
               className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-colors"
             >
-              <span className="text-2xl">🤖</span>
+              <Image src="/icons/dashboard/create-agent-48.png" width={40} height={40} alt="Create Agent" />
               <div>
                 <p className="font-medium text-text-primary">Create Agent</p>
                 <p className="text-xs text-text-tertiary">
@@ -188,7 +189,7 @@ export default async function DashboardPage() {
               href="/leaderboard"
               className="flex items-center gap-3 p-4 bg-surface-elevated border border-border rounded-lg hover:border-border-active transition-colors"
             >
-              <span className="text-2xl">🏆</span>
+              <Image src="/icons/dashboard/leaderboard-48.png" width={40} height={40} alt="Leaderboard" />
               <div>
                 <p className="font-medium text-text-primary">Leaderboard</p>
                 <p className="text-xs text-text-tertiary">
@@ -200,7 +201,7 @@ export default async function DashboardPage() {
               href="/arena"
               className="flex items-center gap-3 p-4 bg-surface-elevated border border-border rounded-lg hover:border-border-active transition-colors"
             >
-              <span className="text-2xl">⚔️</span>
+              <Image src="/icons/dashboard/arena-48.png" width={40} height={40} alt="Arena" />
               <div>
                 <p className="font-medium text-text-primary">Arena</p>
                 <p className="text-xs text-text-tertiary">
