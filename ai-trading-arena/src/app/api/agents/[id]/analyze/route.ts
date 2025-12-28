@@ -363,17 +363,37 @@ export async function POST(request: Request, { params }: RouteContext) {
     // Get current price for the suggested ticker
     const currentPrice = await getTickerPrice(decision.ticker);
 
+    // For BUY actions, validate and cap quantity to stay within available budget
+    let adjustedQuantity = decision.quantity;
+    let adjustedAction = decision.action;
+    let adjustedReasoning = decision.reasoning;
+
+    if (decision.action === "BUY") {
+      const maxAffordableQuantity = Math.floor(portfolio.cash / currentPrice);
+
+      if (maxAffordableQuantity < 1) {
+        // Cannot afford even 1 share - convert to HOLD
+        adjustedAction = "HOLD";
+        adjustedQuantity = 0;
+        adjustedReasoning = `BUDGET CONSTRAINT: Cannot afford ${decision.ticker} at $${currentPrice.toFixed(2)}/share with available cash of $${portfolio.cash.toFixed(2)}. Original recommendation was to BUY ${decision.quantity} shares. ${decision.reasoning}`;
+      } else if (decision.quantity > maxAffordableQuantity) {
+        // Cap quantity to what can be afforded
+        adjustedQuantity = maxAffordableQuantity;
+        adjustedReasoning = `BUDGET ADJUSTED: Quantity reduced from ${decision.quantity} to ${maxAffordableQuantity} shares to fit within available cash of $${portfolio.cash.toFixed(2)}. ${decision.reasoning}`;
+      }
+    }
+
     // Calculate total cost for the trade
-    const totalCost = decision.quantity * currentPrice;
+    const totalCost = adjustedQuantity * currentPrice;
 
     // Build the suggestion response
     const suggestion: TradeSuggestion = {
-      action: decision.action,
+      action: adjustedAction,
       ticker: decision.ticker,
-      quantity: decision.quantity,
+      quantity: adjustedQuantity,
       current_price: currentPrice,
       total_cost: totalCost,
-      reasoning: decision.reasoning,
+      reasoning: adjustedReasoning,
       confidence: decision.confidence,
     };
 
@@ -382,15 +402,15 @@ export async function POST(request: Request, { params }: RouteContext) {
       Date.now() + RECOMMENDATION_CACHE_HOURS * 60 * 60 * 1000
     ).toISOString();
 
-    // Save recommendation to database for caching
+    // Save recommendation to database for caching (use adjusted values for budget validation)
     const recommendationData: AgentRecommendationInsert = {
       agent_id: agentId,
-      action: decision.action,
+      action: adjustedAction,
       ticker: decision.ticker,
-      quantity: decision.quantity,
+      quantity: adjustedQuantity,
       current_price: currentPrice,
       total_cost: totalCost,
-      reasoning: decision.reasoning,
+      reasoning: adjustedReasoning,
       confidence: decision.confidence,
       news_summary: decision.news_summary || null,
       risk_assessment: decision.risk_assessment || null,
