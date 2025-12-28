@@ -39,8 +39,9 @@ You MUST respond with valid JSON in exactly this format:
 4. "confidence" should reflect how certain you are (0.5 = uncertain, 0.9 = very confident)
 5. Consider your risk parameters AND your available cash when making decisions
 6. For SELL actions, you can only sell shares you currently own
-7. For BUY actions, ensure total cost (quantity * price) doesn't exceed available cash
+7. **CRITICAL FOR BUY**: Your quantity MUST fit within your budget. Calculate: quantity * estimated_price <= available_cash. Check the BUYING CONSTRAINTS section in portfolio status for exact limits.
 8. Be specific in your reasoning - reference actual news and data
+9. If you cannot afford any shares of a stock you want to buy, recommend HOLD instead
 
 ## IMPORTANT: HOLD vs BUY/SELL Decision
 - Choose "HOLD" ONLY if you have open positions and want to keep them unchanged
@@ -115,7 +116,8 @@ ${recentTradesStr}`;
  */
 export function buildRealPortfolioContext(
   portfolio: PortfolioSummary,
-  startingCapital: number
+  startingCapital: number,
+  riskParams?: RiskParams
 ): string {
   const formatMoney = (n: number) =>
     n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -150,6 +152,33 @@ export function buildRealPortfolioContext(
     0
   );
 
+  // Build buying constraints section if risk params provided
+  let buyingConstraintsStr = "";
+  if (riskParams) {
+    const maxPositionValue = portfolio.total_value * (riskParams.max_position_pct / 100);
+    const maxBuyAmount = Math.min(portfolio.cash, maxPositionValue);
+
+    // Calculate example max quantities at different price points
+    const examplePrices = [50, 100, 200, 500];
+    const exampleQuantities = examplePrices
+      .map(price => `    $${price}/share: max ${Math.floor(maxBuyAmount / price)} shares`)
+      .join("\n");
+
+    buyingConstraintsStr = `
+=== BUYING CONSTRAINTS (MUST FOLLOW) ===
+  Available Cash: ${formatMoney(portfolio.cash)}
+  Max Position Size: ${riskParams.max_position_pct}% of portfolio = ${formatMoney(maxPositionValue)}
+  Maximum you can spend on ANY BUY: ${formatMoney(maxBuyAmount)}
+
+  EXAMPLE MAX QUANTITIES BY PRICE:
+${exampleQuantities}
+
+  CRITICAL: Your recommended quantity * stock price MUST be <= ${formatMoney(maxBuyAmount)}
+  If a stock costs more than ${formatMoney(maxBuyAmount)}, you CANNOT buy even 1 share - recommend HOLD instead.
+========================================
+`;
+  }
+
   return `=== PORTFOLIO STATUS ===
 
 CASH AVAILABLE: ${formatMoney(portfolio.cash)}
@@ -163,7 +192,8 @@ PORTFOLIO SUMMARY:
   Total Return: ${formatPct(portfolio.total_return_pct)}
   Unrealized P&L: ${formatPnL(totalUnrealizedPnL)}
 
-========================`;
+========================
+${buyingConstraintsStr}`;
 }
 
 /**

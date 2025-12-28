@@ -297,7 +297,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Build context for Claude
     const systemPrompt = buildSystemPrompt(agent.name, agent.system_prompt, riskParams);
-    let portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital);
+    let portfolioContext = buildRealPortfolioContext(portfolio, agent.starting_capital, riskParams);
     const newsContext = buildNewsContext(news);
 
     // If force refresh, fetch and add context about the previous recommendation
