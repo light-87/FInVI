@@ -369,17 +369,26 @@ export async function POST(request: Request, { params }: RouteContext) {
     let adjustedReasoning = decision.reasoning;
 
     if (decision.action === "BUY") {
-      const maxAffordableQuantity = Math.floor(portfolio.cash / currentPrice);
+      // Calculate max allowed based on BOTH cash and max position size
+      const maxPositionValue = portfolio.total_value * (riskParams.max_position_pct / 100);
+      const maxBuyAmount = Math.min(portfolio.cash, maxPositionValue);
+      const maxAffordableQuantity = Math.floor(maxBuyAmount / currentPrice);
 
       if (maxAffordableQuantity < 1) {
         // Cannot afford even 1 share - convert to HOLD
         adjustedAction = "HOLD";
         adjustedQuantity = 0;
-        adjustedReasoning = `BUDGET CONSTRAINT: Cannot afford ${decision.ticker} at $${currentPrice.toFixed(2)}/share with available cash of $${portfolio.cash.toFixed(2)}. Original recommendation was to BUY ${decision.quantity} shares. ${decision.reasoning}`;
+        const limitReason = portfolio.cash < currentPrice
+          ? `insufficient cash ($${portfolio.cash.toFixed(2)})`
+          : `max position size limit (${riskParams.max_position_pct}% = $${maxPositionValue.toFixed(2)})`;
+        adjustedReasoning = `BUDGET CONSTRAINT: Cannot afford ${decision.ticker} at $${currentPrice.toFixed(2)}/share due to ${limitReason}. Original recommendation was to BUY ${decision.quantity} shares. ${decision.reasoning}`;
       } else if (decision.quantity > maxAffordableQuantity) {
-        // Cap quantity to what can be afforded
+        // Cap quantity to respect both cash and max position limits
         adjustedQuantity = maxAffordableQuantity;
-        adjustedReasoning = `BUDGET ADJUSTED: Quantity reduced from ${decision.quantity} to ${maxAffordableQuantity} shares to fit within available cash of $${portfolio.cash.toFixed(2)}. ${decision.reasoning}`;
+        const limitReason = portfolio.cash < maxPositionValue
+          ? `available cash ($${portfolio.cash.toFixed(2)})`
+          : `max position size (${riskParams.max_position_pct}% = $${maxPositionValue.toFixed(2)})`;
+        adjustedReasoning = `POSITION SIZE ADJUSTED: Quantity reduced from ${decision.quantity} to ${maxAffordableQuantity} shares to fit within ${limitReason}. ${decision.reasoning}`;
       }
     }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { TradeSuggestion, PortfolioSummary } from "@/types/database";
 
 interface TradeConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (enableAuto: boolean, autoInterval: "3h" | "10h" | "24h") => Promise<void>;
+  onConfirm: (enableAuto: boolean, autoInterval: "3h" | "10h" | "24h", adjustedQuantity: number) => Promise<void>;
   suggestion: TradeSuggestion;
   portfolio: PortfolioSummary;
   newsSummary: string;
@@ -17,6 +17,7 @@ interface TradeConfirmationModalProps {
   isStopLoss?: boolean;
   stopLossPct?: number;
   positionLossPct?: number;
+  maxPositionPct?: number;
 }
 
 export function TradeConfirmationModal({
@@ -33,10 +34,17 @@ export function TradeConfirmationModal({
   isStopLoss,
   stopLossPct,
   positionLossPct,
+  maxPositionPct = 25,
 }: TradeConfirmationModalProps) {
   const [enableAuto, setEnableAuto] = useState(false);
   const [autoInterval, setAutoInterval] = useState<"3h" | "10h" | "24h">("24h");
   const [isExecuting, setIsExecuting] = useState(false);
+  const [adjustedQuantity, setAdjustedQuantity] = useState(suggestion.quantity);
+
+  // Reset quantity when suggestion changes
+  useEffect(() => {
+    setAdjustedQuantity(suggestion.quantity);
+  }, [suggestion.quantity]);
 
   if (!isOpen) return null;
 
@@ -46,20 +54,30 @@ export function TradeConfirmationModal({
   const handleConfirm = async () => {
     setIsExecuting(true);
     try {
-      await onConfirm(enableAuto, autoInterval);
+      await onConfirm(enableAuto, autoInterval, adjustedQuantity);
     } finally {
       setIsExecuting(false);
     }
   };
 
+  // Calculate limits for BUY
+  const maxPositionValue = portfolio.total_value * (maxPositionPct / 100);
+  const maxBuyAmount = Math.min(portfolio.cash, maxPositionValue);
+  const maxQuantity = suggestion.action === "BUY"
+    ? Math.floor(maxBuyAmount / suggestion.current_price)
+    : suggestion.quantity;
+
+  // Calculate adjusted total cost
+  const adjustedTotalCost = adjustedQuantity * suggestion.current_price;
+
   const cashAfterTrade =
     suggestion.action === "BUY"
-      ? portfolio.cash - suggestion.total_cost
-      : portfolio.cash + suggestion.total_cost;
+      ? portfolio.cash - adjustedTotalCost
+      : portfolio.cash + adjustedTotalCost;
 
   const canAfford =
     suggestion.action === "BUY"
-      ? portfolio.cash >= suggestion.total_cost
+      ? portfolio.cash >= adjustedTotalCost && adjustedQuantity > 0
       : true;
 
   return (
@@ -135,12 +153,65 @@ export function TradeConfirmationModal({
 
           {/* Trade Details */}
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-text-secondary">Quantity</span>
-              <span className="font-mono text-text-primary">
-                {suggestion.quantity} shares
-              </span>
+            {/* Quantity with adjustment for BUY */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-text-secondary">Quantity</span>
+                <span className="font-mono text-text-primary">
+                  {adjustedQuantity} shares
+                  {adjustedQuantity !== suggestion.quantity && (
+                    <span className="text-xs text-text-tertiary ml-2">
+                      (AI suggested: {suggestion.quantity})
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              {/* Quantity Slider for BUY orders */}
+              {suggestion.action === "BUY" && maxQuantity > 0 && (
+                <div className="p-3 bg-surface-elevated rounded-lg space-y-2">
+                  <div className="flex items-center justify-between text-xs text-text-tertiary">
+                    <span>Adjust quantity</span>
+                    <span>Max: {maxQuantity} shares</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={maxQuantity}
+                    value={adjustedQuantity}
+                    onChange={(e) => setAdjustedQuantity(Number(e.target.value))}
+                    className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={maxQuantity}
+                      value={adjustedQuantity}
+                      onChange={(e) => {
+                        const val = Math.min(Math.max(1, Number(e.target.value)), maxQuantity);
+                        setAdjustedQuantity(val);
+                      }}
+                      className="w-24 px-2 py-1 bg-surface border border-border rounded text-text-primary font-mono text-sm"
+                    />
+                    <span className="text-xs text-text-tertiary">shares</span>
+                    <button
+                      onClick={() => setAdjustedQuantity(maxQuantity)}
+                      className="ml-auto px-2 py-1 text-xs bg-primary/10 text-primary rounded hover:bg-primary/20"
+                    >
+                      Max
+                    </button>
+                    <button
+                      onClick={() => setAdjustedQuantity(suggestion.quantity)}
+                      className="px-2 py-1 text-xs bg-secondary/10 text-secondary rounded hover:bg-secondary/20"
+                    >
+                      AI Suggested
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
             <div className="flex justify-between items-center">
               <span className="text-text-secondary">Price</span>
               <span className="font-mono text-text-primary">
@@ -150,7 +221,12 @@ export function TradeConfirmationModal({
             <div className="flex justify-between items-center">
               <span className="text-text-secondary">Total Cost</span>
               <span className="font-mono font-bold text-text-primary">
-                {formatMoney(suggestion.total_cost)}
+                {formatMoney(adjustedTotalCost)}
+                {adjustedTotalCost !== suggestion.total_cost && (
+                  <span className="text-xs text-text-tertiary ml-2">
+                    (was: {formatMoney(suggestion.total_cost)})
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -271,7 +347,7 @@ export function TradeConfirmationModal({
           {/* Warning if can't afford */}
           {!canAfford && (
             <div className="p-3 bg-loss/10 border border-loss/20 rounded-lg text-loss text-sm">
-              Insufficient funds. You need {formatMoney(suggestion.total_cost)}{" "}
+              Insufficient funds. You need {formatMoney(adjustedTotalCost)}{" "}
               but only have {formatMoney(portfolio.cash)}.
             </div>
           )}
