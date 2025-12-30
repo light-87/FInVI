@@ -444,7 +444,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Image src="/icons/logo/vivy-logo.svg" width={24} height={24} alt="Vivy" />
             <span className="text-xl font-bold font-display text-primary">Vivy</span>
-            <span className="text-text-tertiary text-sm">© 2024</span>
+            <span className="text-text-tertiary text-sm">© 2025</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-text-tertiary">
             <span className="font-mono">Built with Bun + Next.js</span>
