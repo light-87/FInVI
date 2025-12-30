@@ -34,9 +34,10 @@ interface RunAnalysisProps {
   isActive: boolean;
   autoExecute?: boolean;
   autoInterval?: "3h" | "10h" | "24h";
+  maxPositionPct?: number;
 }
 
-export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterval = "24h" }: RunAnalysisProps) {
+export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterval = "24h", maxPositionPct = 25 }: RunAnalysisProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -122,9 +123,13 @@ export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterv
 
   const handleConfirmTrade = async (
     enableAuto: boolean,
-    autoInterval: "3h" | "10h" | "24h"
+    autoInterval: "3h" | "10h" | "24h",
+    adjustedQuantity: number
   ) => {
     if (!analysisResult) return;
+
+    // Use adjusted quantity from the modal
+    const quantity = adjustedQuantity || analysisResult.suggestion.quantity;
 
     try {
       const res = await fetch(`/api/agents/${agentId}/execute`, {
@@ -133,7 +138,7 @@ export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterv
         body: JSON.stringify({
           action: analysisResult.suggestion.action,
           ticker: analysisResult.suggestion.ticker,
-          quantity: analysisResult.suggestion.quantity,
+          quantity: quantity,
           price: analysisResult.suggestion.current_price,
           enable_auto: enableAuto,
           auto_interval: autoInterval,
@@ -148,7 +153,7 @@ export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterv
 
       setShowConfirmation(false);
       setSuccessMessage(
-        `Trade executed: ${analysisResult.suggestion.action} ${analysisResult.suggestion.quantity} ${analysisResult.suggestion.ticker} @ $${analysisResult.suggestion.current_price.toFixed(2)}`
+        `Trade executed: ${analysisResult.suggestion.action} ${quantity} ${analysisResult.suggestion.ticker} @ $${analysisResult.suggestion.current_price.toFixed(2)}`
       );
 
       // Dispatch event to notify portfolio section to refresh
@@ -319,6 +324,7 @@ export function RunAnalysis({ agentId, isActive, autoExecute = false, autoInterv
           isStopLoss={analysisMeta.is_stop_loss}
           stopLossPct={analysisMeta.stop_loss_pct}
           positionLossPct={analysisMeta.position_loss_pct}
+          maxPositionPct={maxPositionPct}
         />
       )}
     </>

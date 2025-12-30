@@ -107,6 +107,7 @@ export default async function AgentDetailPage({ params }: PageProps) {
         isActive={agent.status === "active"}
         autoExecute={agent.auto_execute}
         autoInterval={agent.auto_interval}
+        maxPositionPct={riskParams.max_position_pct}
       />
 
       {/* Stats Grid */}
