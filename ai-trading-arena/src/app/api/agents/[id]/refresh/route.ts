@@ -68,13 +68,18 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Only update if this is the owner
     if (agent.user_id === authUser.id) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("agents")
         .update({
           current_value: newCurrentValue,
           total_return_pct: newReturnPct,
         } as never)
         .eq("id", agentId);
+
+      if (updateError) {
+        console.error("Error updating agent values:", updateError);
+        // Continue anyway to return portfolio data, but log the error
+      }
 
       // Create portfolio snapshot for tracking history
       const snapshotData: PortfolioSnapshotInsert = {
@@ -124,6 +129,7 @@ export async function POST(request: Request, { params }: RouteContext) {
  * GET /api/agents/[id]/refresh - Get current portfolio without creating snapshot
  *
  * Lighter-weight version for quick portfolio checks.
+ * Also updates the agent's current_value and total_return_pct in the database.
  */
 export async function GET(request: Request, { params }: RouteContext) {
   try {
@@ -167,6 +173,25 @@ export async function GET(request: Request, { params }: RouteContext) {
 
     // Fetch portfolio with current prices (no snapshot created)
     const portfolio = await getPortfolioSummary(agent);
+
+    // Update agent's current value and return percentage in the database
+    // This ensures the dashboard and other views show up-to-date values
+    if (agent.user_id === authUser.id) {
+      const newCurrentValue = portfolio.total_value;
+      const newReturnPct = ((newCurrentValue - agent.starting_capital) / agent.starting_capital) * 100;
+
+      const { error: updateError } = await supabase
+        .from("agents")
+        .update({
+          current_value: newCurrentValue,
+          total_return_pct: newReturnPct,
+        } as never)
+        .eq("id", agentId);
+
+      if (updateError) {
+        console.error("Error updating agent values on GET:", updateError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

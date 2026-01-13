@@ -139,17 +139,27 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p
-                      className={`font-mono font-bold ${
-                        agent.total_return_pct >= 0 ? "text-profit" : "text-loss"
-                      }`}
-                    >
-                      {agent.total_return_pct >= 0 ? "+" : ""}
-                      {agent.total_return_pct.toFixed(2)}%
-                    </p>
-                    <p className="text-xs text-text-tertiary font-mono">
-                      ${agent.current_value.toLocaleString()}
-                    </p>
+                    {(() => {
+                      // Calculate return from current_value for consistency
+                      const agentReturn = agent.starting_capital > 0
+                        ? ((agent.current_value - agent.starting_capital) / agent.starting_capital) * 100
+                        : 0;
+                      return (
+                        <>
+                          <p
+                            className={`font-mono font-bold ${
+                              agentReturn >= 0 ? "text-profit" : "text-loss"
+                            }`}
+                          >
+                            {agentReturn >= 0 ? "+" : ""}
+                            {agentReturn.toFixed(2)}%
+                          </p>
+                          <p className="text-xs text-text-tertiary font-mono">
+                            ${agent.current_value.toLocaleString()}
+                          </p>
+                        </>
+                      );
+                    })()}
                   </div>
                 </Link>
               ))}

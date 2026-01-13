@@ -78,17 +78,25 @@ export default async function AgentsPage() {
 
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4">
+                {(() => {
+                  // Calculate return from current_value for consistency
+                  const agentReturn = agent.starting_capital > 0
+                    ? ((agent.current_value - agent.starting_capital) / agent.starting_capital) * 100
+                    : 0;
+                  return (
                 <div>
                   <p className="text-text-tertiary text-xs mb-1">Return</p>
                   <p
                     className={`text-lg font-mono font-bold ${
-                      agent.total_return_pct >= 0 ? "text-profit" : "text-loss"
+                      agentReturn >= 0 ? "text-profit" : "text-loss"
                     }`}
                   >
-                    {agent.total_return_pct >= 0 ? "+" : ""}
-                    {agent.total_return_pct.toFixed(2)}%
+                    {agentReturn >= 0 ? "+" : ""}
+                    {agentReturn.toFixed(2)}%
                   </p>
                 </div>
+                  );
+                })()}
                 <div>
                   <p className="text-text-tertiary text-xs mb-1">Win Rate</p>
                   <p className="text-lg font-mono font-bold text-text-primary">
