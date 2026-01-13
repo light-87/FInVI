@@ -115,7 +115,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
 
     const totalCost = quantity * price;
-    let trade: Trade;
     let position: PositionRow | undefined;
     let newCashBalance = agent.cash_balance;
     let realizedPnL: number | null = null;
@@ -300,10 +299,19 @@ export async function POST(request: Request, { params }: RouteContext) {
       nextAutoAnalysisAt = new Date(Date.now() + intervalHours * 60 * 60 * 1000).toISOString();
     }
 
-    await supabase
+    // Get updated portfolio to calculate current value and return percentage
+    const updatedAgent = { ...agent, cash_balance: newCashBalance };
+    const portfolio = await getPortfolioSummary(updatedAgent);
+    const newCurrentValue = portfolio.total_value;
+    const newReturnPct = ((newCurrentValue - agent.starting_capital) / agent.starting_capital) * 100;
+
+    // Update agent with all stats in a single transaction
+    const { error: agentUpdateError } = await supabase
       .from("agents")
       .update({
         cash_balance: newCashBalance,
+        current_value: newCurrentValue,
+        total_return_pct: newReturnPct,
         total_trades: newTotalTrades,
         winning_trades: newWinningTrades,
         win_rate: newWinRate,
@@ -313,6 +321,14 @@ export async function POST(request: Request, { params }: RouteContext) {
         last_analysis_at: new Date().toISOString(),
       } as never)
       .eq("id", agentId);
+
+    if (agentUpdateError) {
+      console.error("Error updating agent stats:", agentUpdateError);
+      return NextResponse.json(
+        { success: false, error: { code: "DATABASE_ERROR", message: "Failed to update agent stats" } },
+        { status: 500 }
+      );
+    }
 
     // Create trade record
     const tradeData: TradeInsert = {
@@ -343,7 +359,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       );
     }
 
-    trade = tradeResult!;
+    const trade = tradeResult!;
 
     // Mark any pending recommendations for this agent as executed
     await supabase
@@ -354,22 +370,6 @@ export async function POST(request: Request, { params }: RouteContext) {
       } as never)
       .eq("agent_id", agentId)
       .eq("is_executed", false);
-
-    // Get updated portfolio
-    const updatedAgent = { ...agent, cash_balance: newCashBalance };
-    const portfolio = await getPortfolioSummary(updatedAgent);
-
-    // Update agent's current value and return percentage
-    const newCurrentValue = portfolio.total_value;
-    const newReturnPct = ((newCurrentValue - agent.starting_capital) / agent.starting_capital) * 100;
-
-    await supabase
-      .from("agents")
-      .update({
-        current_value: newCurrentValue,
-        total_return_pct: newReturnPct,
-      } as never)
-      .eq("id", agentId);
 
     // Create portfolio snapshot
     const snapshotData: PortfolioSnapshotInsert = {

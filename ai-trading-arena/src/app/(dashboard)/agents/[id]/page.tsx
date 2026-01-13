@@ -111,28 +111,36 @@ export default async function AgentDetailPage({ params }: PageProps) {
       />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          label="Current Value"
-          value={`$${agent.current_value.toLocaleString()}`}
-          subtext={`Started: $${agent.starting_capital.toLocaleString()}`}
-        />
-        <StatCard
-          label="Total Return"
-          value={`${agent.total_return_pct >= 0 ? "+" : ""}${agent.total_return_pct.toFixed(2)}%`}
-          valueColor={agent.total_return_pct >= 0 ? "text-profit" : "text-loss"}
-        />
-        <StatCard
-          label="Win Rate"
-          value={`${(agent.win_rate * 100).toFixed(0)}%`}
-          subtext={`${agent.winning_trades}/${agent.total_trades} trades`}
-        />
-        <StatCard
-          label="Total API Cost"
-          value={`$${agent.total_api_cost.toFixed(3)}`}
-          subtext="LLM usage"
-        />
-      </div>
+      {(() => {
+        // Calculate return from current_value for consistency
+        const calculatedReturn = agent.starting_capital > 0
+          ? ((agent.current_value - agent.starting_capital) / agent.starting_capital) * 100
+          : 0;
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              label="Current Value"
+              value={`$${agent.current_value.toLocaleString()}`}
+              subtext={`Started: $${agent.starting_capital.toLocaleString()}`}
+            />
+            <StatCard
+              label="Total Return"
+              value={`${calculatedReturn >= 0 ? "+" : ""}${calculatedReturn.toFixed(2)}%`}
+              valueColor={calculatedReturn >= 0 ? "text-profit" : "text-loss"}
+            />
+            <StatCard
+              label="Win Rate"
+              value={`${(agent.win_rate * 100).toFixed(0)}%`}
+              subtext={`${agent.winning_trades}/${agent.total_trades} trades`}
+            />
+            <StatCard
+              label="Total API Cost"
+              value={`$${agent.total_api_cost.toFixed(3)}`}
+              subtext="LLM usage"
+            />
+          </div>
+        );
+      })()}
 
       {/* Portfolio Section - Real positions and P&L */}
       <PortfolioSection

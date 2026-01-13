@@ -68,13 +68,18 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     // Only update if this is the owner
     if (agent.user_id === authUser.id) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("agents")
         .update({
           current_value: newCurrentValue,
           total_return_pct: newReturnPct,
         } as never)
         .eq("id", agentId);
+
+      if (updateError) {
+        console.error("Error updating agent values:", updateError);
+        // Continue anyway to return portfolio data, but log the error
+      }
 
       // Create portfolio snapshot for tracking history
       const snapshotData: PortfolioSnapshotInsert = {

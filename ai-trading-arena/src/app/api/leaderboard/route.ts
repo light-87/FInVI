@@ -59,18 +59,24 @@ export async function GET(request: Request) {
     }
 
     // Transform to leaderboard entries with rankings
-    const leaderboard: LeaderboardEntry[] = (agents || []).map((agent, index) => ({
-      rank: index + 1,
-      agent_id: agent.id,
-      agent_name: agent.name,
-      user_id: agent.user_id,
-      user_display_name: agent.users?.display_name || "Anonymous",
-      total_return_pct: agent.total_return_pct,
-      win_rate: agent.win_rate,
-      trade_count: agent.total_trades,
-      total_api_cost: agent.total_api_cost,
-      is_own: user ? agent.user_id === user.id : false,
-    }));
+    // Calculate return from current_value for consistency
+    const leaderboard: LeaderboardEntry[] = (agents || []).map((agent, index) => {
+      const calculatedReturn = agent.starting_capital > 0
+        ? ((agent.current_value - agent.starting_capital) / agent.starting_capital) * 100
+        : agent.total_return_pct;
+      return {
+        rank: index + 1,
+        agent_id: agent.id,
+        agent_name: agent.name,
+        user_id: agent.user_id,
+        user_display_name: agent.users?.display_name || "Anonymous",
+        total_return_pct: calculatedReturn,
+        win_rate: agent.win_rate,
+        trade_count: agent.total_trades,
+        total_api_cost: agent.total_api_cost,
+        is_own: user ? agent.user_id === user.id : false,
+      };
+    });
 
     // Get user's own rank if they have public agents
     let userRank: LeaderboardEntry | null = null;
